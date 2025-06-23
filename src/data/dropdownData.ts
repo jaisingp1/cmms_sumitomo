@@ -144,6 +144,7 @@ export interface OrdenTrabajo {
   modelo?: string;
   recibidoPor?: string; // Quién recibió/gestionó inicialmente la OT (distinto de recepcionadoPor en bodega)
   fechaVentaCliente?: string;
+  fechaRecepcion?: string; // Fecha de recepción general usada en el Header
   fotoPlaca?: FotoEntry; // Foto de la placa del equipo
   adjuntos?: FotoEntry[]; // Adjuntos generales a la OT
 
