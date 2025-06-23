@@ -108,8 +108,14 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
-      <header className="mb-6">
+      <header className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">Dashboard de Órdenes de Trabajo (OTs)</h1>
+        <button
+          onClick={() => navigate('/ot/new')} // Asumiendo que '/ot/new' será la ruta para crear una nueva OT
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150"
+        >
+          Crear Nueva OT
+        </button>
       </header>
 
       {/* Barra de búsqueda */}
