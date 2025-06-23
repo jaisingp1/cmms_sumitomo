@@ -160,15 +160,18 @@ export interface OrdenTrabajo {
     fechaRealizacion?: string; // ISO date string
     internoOProveedor?: "Interno" | "Proveedor";
     proveedor?: string; // Si es Proveedor
-    realizadoPor: string;
+    realizadoPor: string; // User who performed the action/update
+    comentarios?: string; // Changed from notas to comentarios for consistency
+    fotos?: FotoEntry[];   // Added fotos array
   };
 
   // Pestaña/Sección: Desarme
   desarme?: {
     fecha: string;
     realizadoPor: string;
-    comentarios?: string; // Ej: "Limpieza de todas las piezas realizada"
+    accionARealizar?: string; // Changed from comentarios to match UI
     piezasIdentificadas?: string[]; // Nombres de las piezas principales
+    fotos?: FotoEntry[]; // Added fotos
   };
 
   // Pestaña/Sección: Diagnóstico de Piezas
@@ -190,6 +193,13 @@ export interface OrdenTrabajo {
     fechaAprobacionCliente?: string; // ISO date string
     aprobadoPor?: string; // Quién aprueba internamente o registra aprobación cliente
     comentarios?: string;
+    // Fields used by BudgetTab's UI and calculations
+    subtotal?: number;
+    impuestos?: number;
+    totalGeneral?: number;
+    aprobado?: boolean; // For internal approval checkbox
+    fechaAprobacion?: string; // Date for internal approval
+    responsable?: string; // User responsible for internal approval
   };
 
   // Pestaña/Sección: Reparación
@@ -208,14 +218,16 @@ export interface OrdenTrabajo {
     fecha: string;
     realizadoPor: string;
     comentarios?: string;
+    fotos?: FotoEntry[]; // Added fotos
   };
 
   // Pestaña/Sección: Aprobación de Calidad
   aprobacionCalidad?: {
     aprobado: boolean;
     fecha: string; // ISO date string
-    aprobadoPor: string; // Firma electrónica o nombre del validador
+    aprobadoPor: string; // Nombre del validador/responsable
     comentarios?: string;
+    firma?: string; // For storing signature data/status text
   };
 
   // Pestaña/Sección: Despacho
@@ -224,6 +236,7 @@ export interface OrdenTrabajo {
     fechaDespacho?: string; // ISO date string
     despachadoPor?: string;
     comentarios?: string;
+    adjuntos?: FotoEntry[]; // Added for attachments
   };
 
   // Historial de cambios de estado y acciones importantes
