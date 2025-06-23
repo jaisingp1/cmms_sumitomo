@@ -228,7 +228,38 @@ export interface OrdenTrabajo {
 
   // Historial de cambios de estado y acciones importantes
   historial: HistorialEntry[];
+  changeLog?: ChangeHistoryEntry[]; // Added for new immutable history
 }
+
+// Define types for Change History (moved from OTDetailsPage.tsx)
+export interface ChangeHistoryEntry {
+  id: string;
+  timestamp: string;
+  user: string;
+  changeType: ChangeType;
+  description: string;
+  details?: Record<string, any>;
+}
+
+export type ChangeType =
+  | "OT_CREATION"
+  | "STATUS_UPDATE"
+  | "HEADER_FIELD_UPDATE"
+  | "INSPECTION_UPDATE"
+  | "CLEANING_UPDATE"
+  | "DISASSEMBLY_UPDATE"
+  | "PARTS_UPDATE"
+  | "BUDGET_ITEM_ADD"
+  | "BUDGET_ITEM_REMOVE"
+  | "BUDGET_ITEM_UPDATE"
+  | "BUDGET_APPROVAL"
+  | "REPAIR_NOTES_UPDATE"
+  | "ADDITIONAL_PART_ADD"
+  | "ADDITIONAL_PART_REMOVE"
+  | "ADDITIONAL_PART_UPDATE"
+  | "TESTING_UPDATE"
+  | "QUALITY_APPROVAL"
+  | "CLOSURE_UPDATE";
 
 // Datos simulados para la tabla
 export const mockOrdenesTrabajo: OrdenTrabajo[] = [
