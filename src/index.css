@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+body {
+  @apply bg-gray-100;
+  font-family: 'Inter', sans-serif; /* Una fuente sans-serif moderna y limpia */
+}
+
+/* Asegurarse de que la app ocupe toda la altura */
+#root, body, html {
+  height: 100%;
+  margin: 0;
+}
+
+/* Ajuste para que el main container dentro de App pueda crecer */
+/* Esto es opcional y depende de cómo se estructure App.jsx */
+/* Por ahora, lo dejamos así, ya que el main en App.jsx no tiene clases específicas de altura */
