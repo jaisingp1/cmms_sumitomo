@@ -6,9 +6,12 @@ import {
   modeloEquipoOptions, 
   recibidoPorOptions,
   mockOrdenesTrabajo,
-  ChangeHistoryEntry, // Import from dropdownData
-  ChangeType, // Import from dropdownData (removed duplicate)
-  OrdenTrabajo // Import OrdenTrabajo to use in TabComponentProps
+  ChangeHistoryEntry,
+  ChangeType,
+  OrdenTrabajo,
+  FotoEntry,        // Added import
+  PiezaDetalle,     // Added import
+  PresupuestoItem   // Added import
 } from '../data/dropdownData';
 
 // Define common props for Tab components
@@ -519,7 +522,7 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
 
 // Cleaning Tab
 const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  const handleFieldChange = (field: keyof OrdenTrabajo['limpiezaEquipo'], value: any) => {
+  const handleFieldChange = (field: keyof NonNullable<OrdenTrabajo['limpiezaEquipo']>, value: any) => {
     const oldValue = workOrder.limpiezaEquipo?.[field] || "";
     // Ensure limpiezaEquipo object and its mandatory fields exist before updating
     const currentLimpiezaEquipo = workOrder.limpiezaEquipo || { realizadoPor: "CurrentUser", fechaRealizacion: new Date().toISOString() };
@@ -861,7 +864,7 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
     }));
     addChangeLogEntry({
       changeType: "PARTS_UPDATE",
-      description: `Campo '${field}' de pieza '${updatedParts[index]?.nombre || index + 1}' actualizado a '${value}'.`,
+      description: `Campo '${String(field)}' de pieza '${updatedParts[index]?.nombre || index + 1}' actualizado a '${value}'.`,
       details: {
         action: "UPDATE_PART_FIELD",
         tab: "diagnosticoPiezas",
@@ -1123,7 +1126,7 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
     });
     addChangeLogEntry({
       changeType: "BUDGET_ITEM_UPDATE",
-      description: `Ítem '${updatedItems[index]?.descripcion || index + 1}' del presupuesto actualizado (campo: ${field}).`,
+      description: `Ítem '${updatedItems[index]?.descripcion || index + 1}' del presupuesto actualizado (campo: ${String(field)}).`,
       details: {
         tab: "presupuesto",
         itemIndex: index,
