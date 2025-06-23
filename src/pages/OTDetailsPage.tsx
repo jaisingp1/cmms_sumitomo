@@ -25,6 +25,16 @@ interface TabComponentProps {
 // Helper to generate unique IDs
 const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
 
+// Helper to generate OT ID in the format OTAAMMDDcorrelativo
+const generateOtId = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Meses son 0-indexados
+  const day = date.getDate().toString().padStart(2, '0');
+  const correlativo = "001"; // Simplificación por ahora
+  return `OT${year}${month}${day}${correlativo}`;
+};
+
 interface WorkOrderFormProps {
   ordenTrabajo?: OrdenTrabajo;
   isNew?: boolean;
@@ -34,7 +44,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // State for the current work order
   const [workOrder, setWorkOrder] = useState<OrdenTrabajo>(() => {
     if (isNew) {
-      const newOtId = generateUUID();
+      const newOtId = generateOtId(); // Usar la nueva función para generar ID de OT
       const newWorkOrder: OrdenTrabajo = {
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
@@ -47,8 +57,12 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         modelo: '',
         recibidoPor: '',
         fechaVentaCliente: '',
-        fechaRecepcion: new Date().toISOString().split('T')[0], // Default to today
+        fechaRecepcion: '', // Asegurar que esté vacío
         tipoProducto: '',
+        producto: '', // Asegurar que esté vacío
+        productoOtro: '', // Asegurar que esté vacío
+        orientacion: '', // Asegurar que esté vacío
+        reduccion: '', // Asegurar que esté vacío
         // Asegúrate de inicializar todas las propiedades requeridas por OrdenTrabajo
         // Por ejemplo, las pestañas podrían necesitar objetos vacíos o con valores por defecto
         inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
@@ -123,7 +137,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // Function to handle changes in the header form
   const handleHeaderChange = (field: string, value: any) => {
     const oldValue = workOrder[field];
-    if (oldValue !== value) {
+    if (oldValue !== value) { // Solo loguear si el valor realmente cambió
       // Attempt to get a more user-friendly field name
       // This can be expanded with more specific mappings if needed
       const fieldNameMappings: Record<string, string> = {
@@ -154,6 +168,35 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
       setWorkOrder(prev => ({ ...prev, [field]: value }));
     }
   };
+
+  const handleNumeroSerieBlur = (numeroSerieIngresado: string) => {
+    if (!numeroSerieIngresado) return; // No hacer nada si el campo está vacío
+
+    const otEncontrada = mockOrdenesTrabajo.find(ot => ot.numeroSerie === numeroSerieIngresado);
+
+    if (otEncontrada) {
+      setWorkOrder(prevWorkOrder => ({
+        ...prevWorkOrder,
+        tipoProducto: otEncontrada.tipoProducto || prevWorkOrder.tipoProducto,
+        orientacion: otEncontrada.orientacion || prevWorkOrder.orientacion,
+        reduccion: otEncontrada.reduccion || prevWorkOrder.reduccion,
+        cliente: otEncontrada.cliente || prevWorkOrder.cliente,
+        vendedor: otEncontrada.vendedor || prevWorkOrder.vendedor,
+        modelo: otEncontrada.modelo || prevWorkOrder.modelo,
+        fechaVentaCliente: otEncontrada.fechaVentaCliente || prevWorkOrder.fechaVentaCliente,
+        producto: otEncontrada.producto || prevWorkOrder.producto,
+        productoOtro: otEncontrada.productoOtro || prevWorkOrder.productoOtro,
+      }));
+
+      addChangeLogEntry({
+        changeType: "HEADER_FIELD_UPDATE", // Podríamos crear un ChangeType específico para autocompletado
+        description: `Campos autocompletados basados en N/S: ${numeroSerieIngresado}.`,
+        details: { numeroSerie: numeroSerieIngresado, origen: "Autocompletado por N/S" }
+      });
+    }
+    // Si no se encuentra, no se hace nada, los campos mantienen sus valores actuales.
+    // Opcionalmente, se podrían limpiar si esa fuera la lógica deseada.
+  };
   
   // Function to handle changes in the history (OLD - TO BE REMOVED/REPLACED)
   // const handleHistoryChange = (newHistory) => {
@@ -183,8 +226,9 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
       {/* Header with equipment info, client info, and status */}
       <Header 
         workOrder={workOrder} 
-        onHeaderChange={handleHeaderChange} // Pass workOrder and onHeaderChange
-        isNewOt={isNew} // Pass the isNew prop to Header
+        onHeaderChange={handleHeaderChange}
+        onNumeroSerieBlur={handleNumeroSerieBlur} // Pasar la nueva función
+        isNewOt={isNew}
       />
       
       {/* Tabs for different sections */}
@@ -206,7 +250,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
 
 // Header component
 // Removed serialNumber and setSerialNumber props, uses workOrder.numeroSerie and onHeaderChange
-const Header = ({ workOrder, onHeaderChange, isNewOt }) => { // Added isNewOt prop
+const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { // Added onNumeroSerieBlur and isNewOt props
   const [isEditing, setIsEditing] = useState(isNewOt); // Start in editing mode if new OT
 
   const toggleEditing = () => {
@@ -242,6 +286,7 @@ const Header = ({ workOrder, onHeaderChange, isNewOt }) => { // Added isNewOt pr
             type="text"
             value={workOrder.numeroSerie || ''}
             onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
+            onBlur={(e) => onNumeroSerieBlur(e.target.value)} // Llamar a la función en onBlur
             readOnly={!isEditing} // Solo depende de isEditing
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />

@@ -293,6 +293,9 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     orientacion: orientacionOptions[1], // Horizontal
     reduccion: reduccionOptions[1], // Doble reducción
     cliente: clienteOptions[0], // Cliente A
+    vendedor: vendedorOptions[0], // Ana Gómez
+    modelo: modeloEquipoOptions[0], // Laptop HP EliteBook 840 G5
+    fechaVentaCliente: "2023-01-15", // Fecha de ejemplo
     estado: otStatusOptions[0], // Creada
     historial: [
       { fecha: new Date().toISOString(), evento: "OT Creada", responsable: "UsuarioSistema" },
