@@ -9,7 +9,13 @@ import './App.css'; // Mantener si hay estilos globales aquí
 
 // Wrapper component to fetch OT data and pass it to OTDetailsPage
 const OTDetailsWrapper = () => {
-  const { otId } = useParams(); // Removed TypeScript generic here
+  const { otId } = useParams();
+
+  if (otId === 'new') {
+    // Pasamos una prop 'isNew' a OTDetailsPage para indicar la creación de una nueva OT
+    return <OTDetailsPage isNew={true} />;
+  }
+
   const ordenTrabajo = mockOrdenesTrabajo.find(ot => ot.id === otId);
 
   if (!ordenTrabajo) {
@@ -20,6 +26,7 @@ const OTDetailsWrapper = () => {
       </div>
     );
   }
+  // Pasamos la OT encontrada a OTDetailsPage
   return <OTDetailsPage ordenTrabajo={ordenTrabajo} />;
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   otStatusOptions, 
   clienteOptions, 
@@ -24,26 +25,85 @@ interface TabComponentProps {
 // Helper to generate unique IDs
 const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
 
-const WorkOrderForm = () => {
+interface WorkOrderFormProps {
+  ordenTrabajo?: OrdenTrabajo;
+  isNew?: boolean;
+}
+
+const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, isNew }) => {
   // State for the current work order
-  const [workOrder, setWorkOrder] = useState(() => {
-    const initialOrder = mockOrdenesTrabajo[0];
-    // Initialize changeLog if it doesn't exist
-    if (!initialOrder.changeLog) {
-      initialOrder.changeLog = [{
-        id: generateUUID(),
-        timestamp: new Date().toISOString(),
-        user: "Sistema", // Or a default user
-        changeType: "OT_CREATION",
-        description: `Orden de Trabajo creada con datos iniciales (N/S: ${initialOrder.numeroSerie || 'N/A'}).`,
-        details: { numeroSerie: initialOrder.numeroSerie }
-      }];
+  const [workOrder, setWorkOrder] = useState<OrdenTrabajo>(() => {
+    if (isNew) {
+      const newOtId = generateUUID();
+      const newWorkOrder: OrdenTrabajo = {
+        id: newOtId,
+        fechaCreacion: new Date().toISOString().split('T')[0],
+        estado: "Creación", // Estado inicial
+        // Initialize other fields as needed, e.g., with empty strings or default values
+        motivoIngreso: '',
+        cliente: '',
+        vendedor: '',
+        numeroSerie: '', // Permitir que el usuario ingrese esto
+        modelo: '',
+        recibidoPor: '',
+        fechaVentaCliente: '',
+        fechaRecepcion: new Date().toISOString().split('T')[0], // Default to today
+        tipoProducto: '',
+        // Asegúrate de inicializar todas las propiedades requeridas por OrdenTrabajo
+        // Por ejemplo, las pestañas podrían necesitar objetos vacíos o con valores por defecto
+        inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
+        limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: '', comentarios: '', fotos: [] },
+        desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
+        diagnosticoPiezas: { piezas: [], fecha: '', realizadoPor: '' },
+        presupuesto: { items: [], valorTotal: 0, fechaCreacion: '', creadoPor: '', subtotal: 0, impuestos: 0, totalGeneral: 0 },
+        reparacion: { piezasAdicionales: [], comentarios: '', realizadoPor: '' },
+        pruebasDinamicas: { tipoPrueba: '', resultados: '', fotos: [], fecha: '', realizadoPor: '' },
+        aprobacionCalidad: { aprobado: false, firma: '', fecha: '', aprobadoPor: '' },
+        despacho: { guiaDespacho: '', fechaDespacho: '', despachadoPor: '', comentarios: '', adjuntos: [] },
+        changeLog: [{
+          id: generateUUID(),
+          timestamp: new Date().toISOString(),
+          user: "Sistema",
+          changeType: "OT_CREATION",
+          description: `Nueva Orden de Trabajo ${newOtId} creada.`,
+          details: { otId: newOtId }
+        }]
+      };
+      return newWorkOrder;
+    } else if (initialOt) {
+      // Initialize changeLog if it doesn't exist for an existing OT
+      if (!initialOt.changeLog) {
+        initialOt.changeLog = [{
+          id: generateUUID(),
+          timestamp: new Date().toISOString(),
+          user: "Sistema",
+          changeType: "OT_CREATION", // Or a more appropriate type like "LOG_INIT"
+          description: `Historial de cambios inicializado para OT ${initialOt.id} (N/S: ${initialOt.numeroSerie || 'N/A'}).`,
+          details: { numeroSerie: initialOt.numeroSerie }
+        }];
+      }
+      return initialOt;
     }
-    return initialOrder;
+    // Fallback to a default mock OT if no data is provided (should ideally not happen with proper routing)
+    // Or, better, throw an error or redirect if initialOt is expected but not provided and not isNew
+    console.warn("WorkOrderForm cargado sin OT inicial y no está en modo 'nuevo'. Usando mock data.");
+    const fallbackOt = mockOrdenesTrabajo[0]; // Consider removing this or handling it more gracefully
+    if (!fallbackOt.changeLog) {
+        fallbackOt.changeLog = [{
+            id: generateUUID(),
+            timestamp: new Date().toISOString(),
+            user: "Sistema",
+            changeType: "OT_CREATION",
+            description: `OT de respaldo ${fallbackOt.id} cargada (N/S: ${fallbackOt.numeroSerie || 'N/A'}).`,
+            details: { numeroSerie: fallbackOt.numeroSerie }
+        }];
+    }
+    return fallbackOt;
   });
   // State for active tab
   const [activeTab, setActiveTab] = useState('inspeccion');
   // No local serialNumber state here, workOrder.numeroSerie is the truth
+  const navigate = useNavigate();
 
   // Function to add a new entry to the change log
   const addChangeLogEntry = (entryData: Omit<ChangeHistoryEntry, 'id' | 'timestamp' | 'user'>) => {
@@ -111,10 +171,20 @@ const WorkOrderForm = () => {
   
   return (
     <div className="container mx-auto p-6">
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => navigate('/')}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+          Volver a Home
+        </button>
+      </div>
+
       {/* Header with equipment info, client info, and status */}
       <Header 
         workOrder={workOrder} 
         onHeaderChange={handleHeaderChange} // Pass workOrder and onHeaderChange
+        isNewOt={isNew} // Pass the isNew prop to Header
       />
       
       {/* Tabs for different sections */}
@@ -136,41 +206,69 @@ const WorkOrderForm = () => {
 
 // Header component
 // Removed serialNumber and setSerialNumber props, uses workOrder.numeroSerie and onHeaderChange
-const Header = ({ workOrder, onHeaderChange }) => {
+const Header = ({ workOrder, onHeaderChange, isNewOt }) => { // Added isNewOt prop
+  const [isEditing, setIsEditing] = useState(isNewOt); // Start in editing mode if new OT
+
+  const toggleEditing = () => {
+    // For a new OT, "Guardar Cambios" could eventually trigger a save action
+    // For now, it just toggles the editing state.
+    setIsEditing(!isEditing);
+  };
+
   return (
     <div className="bg-white shadow rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4">Información de la Orden de Trabajo</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Información de la Orden de Trabajo</h2>
+        <button
+          onClick={toggleEditing}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          {isEditing ? 'Finalizar Edición OT' : 'Editar Información OT'}
+        </button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Número de Serie</label>
-          <input 
-            type="text" 
-            value={workOrder.numeroSerie || ''}
-            onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          <label className="block text-sm font-medium text-gray-700">Número de OT (ID)</label>
+          <input
+            type="text"
+            value={workOrder.id || ''}
+            readOnly // ID de la OT siempre es de solo lectura
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100"
           />
         </div>
-        
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Número de Serie (Equipo)</label>
+          <input
+            type="text"
+            value={workOrder.numeroSerie || ''}
+            onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
+            readOnly={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+          />
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Tipo de Producto</label>
-          <select 
+          <select
             value={workOrder.tipoProducto || ''}
             onChange={(e) => onHeaderChange('tipoProducto', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
             <option value="GB">GB</option>
             <option value="GM">GM</option>
           </select>
         </div>
-        
+
         {workOrder.tipoProducto === 'GB' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GB</label>
-            <select 
+            <select
               value={workOrder.tipoGB || ''}
               onChange={(e) => onHeaderChange('tipoGB', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              disabled={!isEditing} // Solo depende de isEditing
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione...</option>
               <option value="Paramax">Paramax</option>
@@ -182,14 +280,15 @@ const Header = ({ workOrder, onHeaderChange }) => {
             </select>
           </div>
         )}
-        
+
         {workOrder.tipoProducto === 'GM' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GM</label>
-            <select 
+            <select
               value={workOrder.tipoGM || ''}
               onChange={(e) => onHeaderChange('tipoGM', e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              disabled={!isEditing} // Solo depende de isEditing
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione...</option>
               <option value="Cyclo">Cyclo</option>
@@ -201,26 +300,28 @@ const Header = ({ workOrder, onHeaderChange }) => {
             </select>
           </div>
         )}
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Orientación</label>
-          <select 
+          <select
             value={workOrder.orientacion || ''}
             onChange={(e) => onHeaderChange('orientacion', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
             <option value="vertical">Vertical</option>
             <option value="horizontal">Horizontal</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Reducción</label>
-          <select 
+          <select
             value={workOrder.reduccion || ''}
             onChange={(e) => onHeaderChange('reduccion', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
             <option value="simple">Reducción Simple</option>
@@ -229,85 +330,92 @@ const Header = ({ workOrder, onHeaderChange }) => {
             <option value="cuadruple">Cuadruple Reducción</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
-          <input 
-            type="date" 
+          <input
+            type="date"
             value={workOrder.fechaRecepcion || ''}
             onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            readOnly={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Cliente</label>
-          <select 
+          <select
             value={workOrder.cliente || ''}
             onChange={(e) => onHeaderChange('cliente', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {clienteOptions.map(cliente => (
               <option key={cliente} value={cliente}>{cliente}</option>
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Vendedor</label>
-          <select 
+          <select
             value={workOrder.vendedor || ''}
             onChange={(e) => onHeaderChange('vendedor', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {vendedorOptions.map(vendedor => (
               <option key={vendedor} value={vendedor}>{vendedor}</option>
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Modelo del Equipo</label>
-          <select 
+          <select
             value={workOrder.modelo || ''}
             onChange={(e) => onHeaderChange('modelo', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {modeloEquipoOptions.map(modelo => (
               <option key={modelo} value={modelo}>{modelo}</option>
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Recibido Por</label>
-          <select 
+          <select
             value={workOrder.recibidoPor || ''}
             onChange={(e) => onHeaderChange('recibidoPor', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {recibidoPorOptions.map(recibido => (
               <option key={recibido} value={recibido}>{recibido}</option>
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
-          <input 
-            type="date" 
+          <input
+            type="date"
             value={workOrder.fechaVentaCliente || ''}
             onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            readOnly={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Estado</label>
-          <select 
+          <select
             value={workOrder.estado}
             onChange={(e) => onHeaderChange('estado', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            disabled={!isEditing} // Solo depende de isEditing
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {otStatusOptions.map(status => (
               <option key={status} value={status}>{status}</option>
