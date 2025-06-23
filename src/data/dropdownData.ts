@@ -139,6 +139,11 @@ export interface OrdenTrabajo {
   reduccion?: string; // Simple, Doble, etc.
   cliente: string; // Nombre del cliente
   estado: string; // Estado actual de la OT
+  motivoIngreso?: string;
+  vendedor?: string;
+  modelo?: string;
+  recibidoPor?: string; // Quién recibió/gestionó inicialmente la OT (distinto de recepcionadoPor en bodega)
+  fechaVentaCliente?: string;
   fotoPlaca?: FotoEntry; // Foto de la placa del equipo
   adjuntos?: FotoEntry[]; // Adjuntos generales a la OT
 
