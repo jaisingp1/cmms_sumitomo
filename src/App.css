@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+:root {
+  --primary-color: #003366; /* Azul profundo */
+  --secondary-color: #FFCC00; /* Amarillo resaltador */
+  --text-color: #ffffff; /* Texto blanco */
+  --background-color: #f8f9fa; /* Fondo claro */
+  --border-color: #e9ecef; /* Color de borde suave */
+}
+
+body {
+  @apply bg-gray-100;
+  font-family: 'Inter', sans-serif; /* Fuente limpia y moderna */
+}
+
+/* Asegurarse de que la app ocupe toda la altura */
+#root, body, html {
+  height: 100%;
+  margin: 0;
+}
+
+/* Estilo general del contenedor del perfil */
+.profile-container {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gray-100;
+}
+
+/* Encabezado del perfil */
+.profile-header {
+  @apply bg-[var(--primary-color)] text-white p-4 mb-8 rounded-t-lg shadow-md;
+}
+
+/* Información básica del usuario */
+.user-info {
+  @apply bg-white p-6 rounded-lg shadow-md w-full max-w-lg;
+}
+
+/* Foto de perfil */
+.profile-picture {
+  @apply w-32 h-32 rounded-full overflow-hidden border-2 border-[var(--primary-color)] mb-4;
+}
+
+/* Nombre y título */
+.user-name {
+  @apply text-xl font-bold mb-2;
+}
+
+.user-title {
+  @apply text-base font-medium text-gray-600;
+}
+
+/* Sección de información detallada */
+.details-section {
+  @apply mt-6;
+}
+
+.section-title {
+  @apply text-lg font-bold mb-2;
+}
+
+.field-label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.field-value {
+  @apply mt-1 text-sm text-gray-900;
+}
+
+/* Botones de edición */
+.edit-button {
+  @apply bg-[var(--primary-color)] text-white px-4 py-2 rounded hover:bg-[var(--secondary-color)] transition duration-300 ease-in-out;
+}
+
+/* Resaltador amarillo */
+.highlighter {
+  @apply bg-[var(--secondary-color)] h-1 w-12 mb-2;
+}
