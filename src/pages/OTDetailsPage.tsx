@@ -50,9 +50,9 @@ const WorkOrderForm = () => {
       initialOrder.changeLog = [{
         id: generateUUID(),
         timestamp: new Date().toISOString(),
-        user: "System", // Or a default user
+        user: "Sistema", // Or a default user
         changeType: "OT_CREATION",
-        description: `Work Order created with initial data (N/S: ${initialOrder.numeroSerie || 'N/A'}).`,
+        description: `Orden de Trabajo creada con datos iniciales (N/S: ${initialOrder.numeroSerie || 'N/A'}).`,
         details: { numeroSerie: initialOrder.numeroSerie }
       }];
     }
@@ -81,10 +81,29 @@ const WorkOrderForm = () => {
   const handleHeaderChange = (field: string, value: any) => {
     const oldValue = workOrder[field];
     if (oldValue !== value) {
+      // Attempt to get a more user-friendly field name
+      // This can be expanded with more specific mappings if needed
+      const fieldNameMappings: Record<string, string> = {
+        numeroSerie: "Número de Serie",
+        tipoProducto: "Tipo de Producto",
+        tipoGB: "Tipo GB",
+        tipoGM: "Tipo GM",
+        orientacion: "Orientación",
+        reduccion: "Reducción",
+        fechaRecepcion: "Fecha de Recepción",
+        cliente: "Cliente",
+        vendedor: "Vendedor",
+        modelo: "Modelo del Equipo",
+        recibidoPor: "Recibido Por",
+        fechaVentaCliente: "Fecha Venta Cliente",
+        estado: "Estado"
+      };
+      const displayFieldName = fieldNameMappings[field] || field;
+
       addChangeLogEntry({
         changeType: "HEADER_FIELD_UPDATE",
-        description: `Header field '${field}' changed from '${oldValue}' to '${value}'.`,
-        details: { field, oldValue, newValue: value }
+        description: `Campo '${displayFieldName}' cambiado de '${oldValue || "N/A"}' a '${value || "N/A"}'.`,
+        details: { field: displayFieldName, oldValue, newValue: value }
       });
       setWorkOrder(prev => ({ ...prev, [field]: value }));
     } else {
@@ -420,7 +439,7 @@ const InspectionTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
     if (newComments !== oldComments) {
       addChangeLogEntry({
         changeType: "INSPECTION_UPDATE",
-        description: "Inspection comments updated.",
+        description: "Comentarios de inspección actualizados.",
         details: { field: "diagnosticoInicial", oldValue: oldComments, newValue: newComments }
       });
     }
@@ -433,7 +452,7 @@ const InspectionTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
     }));
     addChangeLogEntry({
       changeType: "INSPECTION_UPDATE",
-      description: `Photo '${fileName}' added to inspection.`,
+      description: `Foto '${fileName}' agregada a inspección.`,
       details: { action: "ADD_PHOTO", tab: "inspeccion", fileName }
     });
   };
@@ -503,10 +522,17 @@ const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
           [field]: value
         }
       }));
+      const fieldNameMappings: Record<string, string> = {
+        tipoLavado: "Tipo de Lavado",
+        fechaRealizacion: "Fecha de Realización",
+        realizadoPor: "Realizado por",
+        notas: "Notas"
+      };
+      const displayFieldName = fieldNameMappings[field] || field;
       addChangeLogEntry({
         changeType: "CLEANING_UPDATE",
-        description: `Cleaning field '${field}' changed to '${value}'.`,
-        details: { tab: "limpieza", field, oldValue, newValue: value }
+        description: `Campo de limpieza '${displayFieldName}' cambiado a '${value || "N/A"}'.`,
+        details: { tab: "limpieza", field: displayFieldName, oldValue, newValue: value }
       });
     }
   };
@@ -524,7 +550,7 @@ const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
     if (newNotes !== oldNotes) {
       addChangeLogEntry({
         changeType: "CLEANING_UPDATE",
-        description: "Cleaning notes updated.",
+        description: "Notas de limpieza actualizadas.",
         details: { tab: "limpieza", field: "notas", oldValue: oldNotes, newValue: newNotes }
       });
     }
@@ -540,7 +566,7 @@ const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
     }));
     addChangeLogEntry({
       changeType: "CLEANING_UPDATE",
-      description: `Photo '${fileName}' added to cleaning.`,
+      description: `Foto '${fileName}' agregada a limpieza.`,
       details: { action: "ADD_PHOTO", tab: "limpieza", fileName }
     });
   };
@@ -1435,21 +1461,75 @@ const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) =>
     <div className="bg-white shadow rounded-lg p-6 mt-6">
       <h3 className="text-lg font-medium mb-4">Historial de Cambios</h3>
       <div className="space-y-4">
-        {changeLog.slice().reverse().map((entry) => ( // Display latest first
-          <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-indigo-600">{entry.changeType}</span>
-              <span className="text-xs text-gray-500">
-                {new Date(entry.timestamp).toLocaleString()}
-              </span>
-            </div>
-            <p className="text-sm text-gray-700 mb-1">{entry.description}</p>
-            <p className="text-sm text-gray-500">Usuario: {entry.user}</p>
+        {changeLog.slice().reverse().map((entry) => { // Display latest first
+          const changeTypeDisplayNames: Record<ChangeType, string> = {
+            OT_CREATION: "Creación de OT",
+            STATUS_UPDATE: "Actualización de Estado",
+            HEADER_FIELD_UPDATE: "Actualización Campo de Cabecera",
+            INSPECTION_UPDATE: "Actualización de Inspección",
+            CLEANING_UPDATE: "Actualización de Limpieza",
+            DISASSEMBLY_UPDATE: "Actualización de Desarme",
+            PARTS_UPDATE: "Actualización de Piezas",
+            BUDGET_ITEM_ADD: "Ítem de Presupuesto Agregado",
+            BUDGET_ITEM_REMOVE: "Ítem de Presupuesto Eliminado",
+            BUDGET_ITEM_UPDATE: "Ítem de Presupuesto Actualizado",
+            BUDGET_APPROVAL: "Aprobación de Presupuesto",
+            REPAIR_NOTES_UPDATE: "Actualización Notas de Reparación",
+            ADDITIONAL_PART_ADD: "Pieza Adicional Agregada",
+            ADDITIONAL_PART_REMOVE: "Pieza Adicional Eliminada",
+            ADDITIONAL_PART_UPDATE: "Pieza Adicional Actualizada",
+            TESTING_UPDATE: "Actualización de Pruebas",
+            QUALITY_APPROVAL: "Aprobación de Calidad",
+            CLOSURE_UPDATE: "Actualización de Cierre",
+          };
+          const displayChangeType = changeTypeDisplayNames[entry.changeType] || entry.changeType;
+
+          return (
+            <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-semibold text-indigo-600">{displayChangeType}</span>
+                <span className="text-xs text-gray-500">
+                  {new Date(entry.timestamp).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-gray-700 mb-1">{entry.description}</p>
+              <p className="text-sm text-gray-500">Usuario: {entry.user}</p>
             {entry.details && Object.keys(entry.details).length > 0 && (
-              <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                <pre className="whitespace-pre-wrap">
-                  {JSON.stringify(entry.details, null, 2)}
-                </pre>
+              <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-3 rounded shadow-inner">
+                <h5 className="text-xs font-semibold text-gray-700 mb-1">Detalles Adicionales:</h5>
+                <ul className="list-disc list-inside pl-1 space-y-0.5">
+                  {Object.entries(entry.details).map(([key, value]) => {
+                    let displayValue = String(value);
+                    if (typeof value === 'boolean') {
+                      displayValue = value ? "Sí" : "No";
+                    } else if (value === null || value === undefined || String(value).trim() === "") {
+                      displayValue = "N/A";
+                    }
+
+                    // Simple key-to-label mapping (can be expanded)
+                    const keyMappings: Record<string, string> = {
+                      field: "Campo",
+                      oldValue: "Valor Anterior",
+                      newValue: "Valor Nuevo",
+                      action: "Acción",
+                      fileName: "Nombre de Archivo",
+                      tab: "Pestaña",
+                      numeroSerie: "Número de Serie",
+                      partIndex: "Índice de Pieza",
+                      removedPart: "Pieza Eliminada",
+                      itemIndex: "Índice de Ítem",
+                      notes: "Notas",
+                      // Add more mappings as needed
+                    };
+                    const displayKey = keyMappings[key] || key.charAt(0).toUpperCase() + key.slice(1); // Capitalize if no mapping
+
+                    return (
+                      <li key={key} className="text-gray-500">
+                        <span className="font-medium text-gray-600">{displayKey}:</span> {displayValue}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
           </div>
