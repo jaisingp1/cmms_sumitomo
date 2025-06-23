@@ -8,32 +8,103 @@ import {
   mockOrdenesTrabajo
 } from '../data/dropdownData';
 
+// Define types for Change History
+interface ChangeHistoryEntry {
+  id: string;
+  timestamp: string;
+  user: string; // Placeholder for now
+  changeType: ChangeType;
+  description: string;
+  details?: Record<string, any>;
+}
+
+type ChangeType =
+  | "OT_CREATION"
+  | "STATUS_UPDATE"
+  | "HEADER_FIELD_UPDATE"
+  | "INSPECTION_UPDATE"
+  | "CLEANING_UPDATE"
+  | "DISASSEMBLY_UPDATE"
+  | "PARTS_UPDATE"
+  | "BUDGET_ITEM_ADD"
+  | "BUDGET_ITEM_REMOVE"
+  | "BUDGET_ITEM_UPDATE"
+  | "BUDGET_APPROVAL"
+  | "REPAIR_NOTES_UPDATE"
+  | "ADDITIONAL_PART_ADD"
+  | "ADDITIONAL_PART_REMOVE"
+  | "ADDITIONAL_PART_UPDATE"
+  | "TESTING_UPDATE"
+  | "QUALITY_APPROVAL"
+  | "CLOSURE_UPDATE";
+
+// Helper to generate unique IDs
+const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+
 const WorkOrderForm = () => {
   // State for the current work order
-  const [workOrder, setWorkOrder] = useState(mockOrdenesTrabajo[0]);
+  const [workOrder, setWorkOrder] = useState(() => {
+    const initialOrder = mockOrdenesTrabajo[0];
+    // Initialize changeLog if it doesn't exist
+    if (!initialOrder.changeLog) {
+      initialOrder.changeLog = [{
+        id: generateUUID(),
+        timestamp: new Date().toISOString(),
+        user: "System", // Or a default user
+        changeType: "OT_CREATION",
+        description: `Work Order created with initial data (N/S: ${initialOrder.numeroSerie || 'N/A'}).`,
+        details: { numeroSerie: initialOrder.numeroSerie }
+      }];
+    }
+    return initialOrder;
+  });
   // State for active tab
   const [activeTab, setActiveTab] = useState('inspeccion');
-  // State for serial number input
-  const [serialNumber, setSerialNumber] = useState(workOrder.numeroSerie || '');
-  
-  // Effect to update work order when serial number changes
-  useEffect(() => {
-    if (serialNumber) {
-      setWorkOrder(prev => ({
-        ...prev,
-        numeroSerie: serialNumber,
-      }));
-    }
-  }, [serialNumber]);
+  // No local serialNumber state here, workOrder.numeroSerie is the truth
+
+  // Function to add a new entry to the change log
+  const addChangeLogEntry = (entryData: Omit<ChangeHistoryEntry, 'id' | 'timestamp' | 'user'>) => {
+    const newEntry: ChangeHistoryEntry = {
+      id: generateUUID(),
+      timestamp: new Date().toISOString(),
+      user: "CurrentUser", // Placeholder - replace with actual user logic
+      ...entryData,
+    };
+    setWorkOrder(prev => ({
+      ...prev,
+      changeLog: [...(prev.changeLog || []), newEntry]
+    }));
+  };
+  // Effect for serialNumber removed, it will be handled by onHeaderChange
   
   // Function to handle changes in the header form
-  const handleHeaderChange = (field, value) => {
-    setWorkOrder(prev => ({ ...prev, [field]: value }));
+  const handleHeaderChange = (field: string, value: any) => {
+    const oldValue = workOrder[field];
+    if (oldValue !== value) {
+      addChangeLogEntry({
+        changeType: "HEADER_FIELD_UPDATE",
+        description: `Header field '${field}' changed from '${oldValue}' to '${value}'.`,
+        details: { field, oldValue, newValue: value }
+      });
+      setWorkOrder(prev => ({ ...prev, [field]: value }));
+    } else {
+      // If only a state update is needed without logging (e.g. derived state)
+      setWorkOrder(prev => ({ ...prev, [field]: value }));
+    }
   };
   
-  // Function to handle changes in the history
+  // Function to handle changes in the history (OLD - TO BE REMOVED/REPLACED)
+  // const handleHistoryChange = (newHistory) => {
+  //   setWorkOrder(prev => ({ ...prev, historial: newHistory }));
+  // };
+
+  // Remove handleHistoryChange prop from HistoryPanel later
+  // The new HistoryPanel will just display workOrder.changeLog
   const handleHistoryChange = (newHistory) => {
-    setWorkOrder(prev => ({ ...prev, historial: newHistory }));
+    // This function is now OBSOLETE for the new immutable history.
+    // Kept temporarily to avoid breaking HistoryPanel prop immediately.
+    // It should not be used to modify the new changeLog.
+    console.warn("handleHistoryChange is obsolete and should be removed.");
   };
   
   return (
@@ -41,9 +112,7 @@ const WorkOrderForm = () => {
       {/* Header with equipment info, client info, and status */}
       <Header 
         workOrder={workOrder} 
-        serialNumber={serialNumber}
-        setSerialNumber={setSerialNumber}
-        onHeaderChange={handleHeaderChange}
+        onHeaderChange={handleHeaderChange} // Pass workOrder and onHeaderChange
       />
       
       {/* Tabs for different sections */}
@@ -51,20 +120,21 @@ const WorkOrderForm = () => {
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
         workOrder={workOrder}
-        setWorkOrder={setWorkOrder}
+        setWorkOrder={setWorkOrder} // This will be refactored to use addChangeLogEntry for specific actions
+        addChangeLogEntry={addChangeLogEntry} // Pass the logger
       />
       
-      {/* History panel */}
-      <HistoryPanel 
-        history={workOrder.historial || []} 
-        onHistoryChange={handleHistoryChange}
+      {/* Display immutable change log */}
+      <ChangeLogDisplay
+        changeLog={workOrder.changeLog || []}
       />
     </div>
   );
 };
 
 // Header component
-const Header = ({ workOrder, serialNumber, setSerialNumber, onHeaderChange }) => {
+// Removed serialNumber and setSerialNumber props, uses workOrder.numeroSerie and onHeaderChange
+const Header = ({ workOrder, onHeaderChange }) => {
   return (
     <div className="bg-white shadow rounded-lg p-6 mb-6">
       <h2 className="text-xl font-bold mb-4">Información de la Orden de Trabajo</h2>
@@ -73,8 +143,8 @@ const Header = ({ workOrder, serialNumber, setSerialNumber, onHeaderChange }) =>
           <label className="block text-sm font-medium text-gray-700">Número de Serie</label>
           <input 
             type="text" 
-            value={serialNumber}
-            onChange={(e) => setSerialNumber(e.target.value)}
+            value={workOrder.numeroSerie || ''}
+            onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
         </div>
@@ -248,7 +318,7 @@ const Header = ({ workOrder, serialNumber, setSerialNumber, onHeaderChange }) =>
 };
 
 // Tabs component
-const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder }) => {
+const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEntry }) => {
   return (
     <div className="bg-white shadow rounded-lg p-6 mb-6">
       <nav className="flex flex-wrap space-x-2 md:space-x-4 mb-6 overflow-x-auto">
@@ -317,34 +387,55 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder }) => {
       </nav>
       
       <div className="mt-4">
-        {activeTab === 'inspeccion' && <InspectionTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'limpieza' && <CleaningTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'desarme' && <DisassemblyTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'piezas' && <PartsTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'presupuesto' && <BudgetTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'reparacion' && <RepairTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'pruebas' && <TestingTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'calidad' && <QualityTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
-        {activeTab === 'cierre' && <ClosureTab workOrder={workOrder} setWorkOrder={setWorkOrder} />}
+        {activeTab === 'inspeccion' && <InspectionTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'limpieza' && <CleaningTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'desarme' && <DisassemblyTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'piezas' && <PartsTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'presupuesto' && <BudgetTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'reparacion' && <RepairTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'pruebas' && <TestingTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'calidad' && <QualityTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'cierre' && <ClosureTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
       </div>
     </div>
   );
 };
 
 // Helper function to determine if a tab is enabled based on the current state
-const isTabEnabled = (tabName, currentStatus) => {
+const isTabEnabled = (tabName: string, currentStatus: string) => {
   // This would need to be customized based on your specific business rules
   // For now, just enabling all tabs for simplicity
   return true;
 };
 
 // Inspection Tab
-const InspectionTab = ({ workOrder, setWorkOrder }) => {
-  const handleAddPhoto = (photo) => {
+const InspectionTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  const handleCommentsChange = (newComments: string) => {
+    setWorkOrder(prev => ({ ...prev, diagnosticoInicial: newComments }));
+  };
+
+  const handleCommentsBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newComments = event.target.value;
+    const oldComments = workOrder.diagnosticoInicial || "";
+    if (newComments !== oldComments) {
+      addChangeLogEntry({
+        changeType: "INSPECTION_UPDATE",
+        description: "Inspection comments updated.",
+        details: { field: "diagnosticoInicial", oldValue: oldComments, newValue: newComments }
+      });
+    }
+  };
+
+  const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
     setWorkOrder(prev => ({
       ...prev,
-      fotos: [...(prev.fotos || []), photo]
+      fotos: [...(prev.fotos || []), photoDataUrl] // Storing data URL directly
     }));
+    addChangeLogEntry({
+      changeType: "INSPECTION_UPDATE",
+      description: `Photo '${fileName}' added to inspection.`,
+      details: { action: "ADD_PHOTO", tab: "inspeccion", fileName }
+    });
   };
   
   return (
@@ -356,7 +447,8 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
         <textarea 
           rows={4}
           value={workOrder.diagnosticoInicial || ''}
-          onChange={(e) => setWorkOrder(prev => ({ ...prev, diagnosticoInicial: e.target.value }))}
+          onChange={(e) => handleCommentsChange(e.target.value)}
+          onBlur={handleCommentsBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -367,7 +459,7 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
           {(workOrder.fotos || []).map((foto, index) => (
             <img 
               key={index} 
-              src={foto} 
+              src={foto} // Assuming 'foto' is the data URL string
               alt={`Inspección ${index + 1}`} 
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
@@ -383,8 +475,8 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target) {
-                      handleAddPhoto(loadEvent.target.result as string);
+                    if (loadEvent.target && loadEvent.target.result) {
+                      handleAddPhoto(loadEvent.target.result as string, file.name);
                     }
                   };
                   reader.readAsDataURL(file);
@@ -400,7 +492,59 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Cleaning Tab
-const CleaningTab = ({ workOrder, setWorkOrder }) => {
+const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  const handleFieldChange = (field: string, value: any) => {
+    const oldValue = workOrder.limpieza?.[field] || "";
+    if (value !== oldValue) {
+      setWorkOrder(prev => ({
+        ...prev,
+        limpieza: {
+          ...(prev.limpieza || {}),
+          [field]: value
+        }
+      }));
+      addChangeLogEntry({
+        changeType: "CLEANING_UPDATE",
+        description: `Cleaning field '${field}' changed to '${value}'.`,
+        details: { tab: "limpieza", field, oldValue, newValue: value }
+      });
+    }
+  };
+
+  const handleNotesChange = (newNotes: string) => {
+    setWorkOrder(prev => ({
+      ...prev,
+      limpieza: { ...(prev.limpieza || {}), notas: newNotes }
+    }));
+  };
+
+  const handleNotesBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newNotes = event.target.value;
+    const oldNotes = workOrder.limpieza?.notas || "";
+    if (newNotes !== oldNotes) {
+      addChangeLogEntry({
+        changeType: "CLEANING_UPDATE",
+        description: "Cleaning notes updated.",
+        details: { tab: "limpieza", field: "notas", oldValue: oldNotes, newValue: newNotes }
+      });
+    }
+  };
+
+  const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
+    setWorkOrder(prev => ({
+      ...prev,
+      limpieza: {
+        ...(prev.limpieza || {}),
+        fotos: [...(prev.limpieza?.fotos || []), photoDataUrl]
+      }
+    }));
+    addChangeLogEntry({
+      changeType: "CLEANING_UPDATE",
+      description: `Photo '${fileName}' added to cleaning.`,
+      details: { action: "ADD_PHOTO", tab: "limpieza", fileName }
+    });
+  };
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Limpieza de Equipo</h3>
@@ -410,13 +554,7 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Lavado</label>
           <select 
             value={workOrder.limpieza?.tipoLavado || ''}
-            onChange={(e) => setWorkOrder(prev => ({
-              ...prev,
-              limpieza: {
-                ...prev.limpieza,
-                tipoLavado: e.target.value
-              }
-            }))}
+            onChange={(e) => handleFieldChange('tipoLavado', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="">Seleccione...</option>
@@ -430,13 +568,7 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
           <input 
             type="date" 
             value={workOrder.limpieza?.fechaRealizacion || ''}
-            onChange={(e) => setWorkOrder(prev => ({
-              ...prev,
-              limpieza: {
-                ...prev.limpieza,
-                fechaRealizacion: e.target.value
-              }
-            }))}
+            onChange={(e) => handleFieldChange('fechaRealizacion', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
         </div>
@@ -445,13 +577,7 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Realizado por</label>
           <select 
             value={workOrder.limpieza?.realizadoPor || ''}
-            onChange={(e) => setWorkOrder(prev => ({
-              ...prev,
-              limpieza: {
-                ...prev.limpieza,
-                realizadoPor: e.target.value
-              }
-            }))}
+            onChange={(e) => handleFieldChange('realizadoPor', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="">Seleccione...</option>
@@ -466,13 +592,8 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
         <textarea 
           rows={4}
           value={workOrder.limpieza?.notas || ''}
-          onChange={(e) => setWorkOrder(prev => ({
-            ...prev,
-            limpieza: {
-              ...prev.limpieza,
-              notas: e.target.value
-            }
-          }))}
+          onChange={(e) => handleNotesChange(e.target.value)}
+          onBlur={handleNotesBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -499,14 +620,8 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target) {
-                      setWorkOrder(prev => ({
-                        ...prev,
-                        limpieza: {
-                          ...prev.limpieza,
-                          fotos: [...(prev.limpieza?.fotos || []), loadEvent.target.result as string]
-                        }
-                      }));
+                    if (loadEvent.target && loadEvent.target.result) {
+                      handleAddPhoto(loadEvent.target.result as string, file.name);
                     }
                   };
                   reader.readAsDataURL(file);
@@ -522,7 +637,7 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Disassembly Tab
-const DisassemblyTab = ({ workOrder, setWorkOrder }) => {
+const DisassemblyTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Desarme</h3>
@@ -565,7 +680,7 @@ const DisassemblyTab = ({ workOrder, setWorkOrder }) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target) {
+                    if (loadEvent.target && loadEvent.target.result) {
                       setWorkOrder(prev => ({
                         ...prev,
                         desarme: {
@@ -613,7 +728,7 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
   const uploadPartPhoto = (index, file) => {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
-      if (loadEvent.target) {
+      if (loadEvent.target && loadEvent.target.result) {
         updatePart(index, 'foto', loadEvent.target.result as string);
       }
     };
@@ -1036,7 +1151,7 @@ const RepairTab = ({ workOrder, setWorkOrder }) => {
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Notas de Reparación</label>
         <textarea 
-          rows="6"
+          rows={6}
           value={workOrder.notasReparacion || ''}
           onChange={(e) => setWorkOrder(prev => ({ ...prev, notasReparacion: e.target.value }))}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -1106,7 +1221,7 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target) {
+                    if (loadEvent.target && loadEvent.target.result) {
                       setWorkOrder(prev => ({
                         ...prev,
                         pruebas: {
@@ -1305,100 +1420,41 @@ const ClosureTab = ({ workOrder, setWorkOrder }) => {
   );
 };
 
-// History Panel
-const HistoryPanel = ({ history, onHistoryChange }) => {
-  const addHistoryItem = () => {
-    const newHistoryItem = {
-      fecha: new Date().toISOString().split('T')[0],
-      evento: '',
-      responsable: '',
-      notas: ''
-    };
-    
-    onHistoryChange([...history, newHistoryItem]);
-  };
-  
-  const updateHistoryItem = (index, field, value) => {
-    const updatedHistory = [...history];
-    updatedHistory[index][field] = value;
-    onHistoryChange(updatedHistory);
-  };
-  
-  const removeHistoryItem = (index) => {
-    const updatedHistory = history.filter((_, i) => i !== index);
-    onHistoryChange(updatedHistory);
-  };
-  
+// ChangeLogDisplay Component (replaces old HistoryPanel)
+const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) => {
+  if (!changeLog || changeLog.length === 0) {
+    return (
+      <div className="bg-white shadow rounded-lg p-6 mt-6">
+        <h3 className="text-lg font-medium mb-4">Historial de Cambios</h3>
+        <p className="text-sm text-gray-500">No hay historial de cambios disponible.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium mb-4">Historial</h3>
-      
+    <div className="bg-white shadow rounded-lg p-6 mt-6">
+      <h3 className="text-lg font-medium mb-4">Historial de Cambios</h3>
       <div className="space-y-4">
-        {history.map((item, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg p-4">
+        {changeLog.slice().reverse().map((entry) => ( // Display latest first
+          <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-md font-medium">Evento {index + 1}</h4>
-              <button 
-                type="button" 
-                onClick={() => removeHistoryItem(index)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Eliminar
-              </button>
+              <span className="text-sm font-semibold text-indigo-600">{entry.changeType}</span>
+              <span className="text-xs text-gray-500">
+                {new Date(entry.timestamp).toLocaleString()}
+              </span>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                <input 
-                  type="date" 
-                  value={item.fecha}
-                  onChange={(e) => updateHistoryItem(index, 'fecha', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
+            <p className="text-sm text-gray-700 mb-1">{entry.description}</p>
+            <p className="text-sm text-gray-500">Usuario: {entry.user}</p>
+            {entry.details && Object.keys(entry.details).length > 0 && (
+              <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                <pre className="whitespace-pre-wrap">
+                  {JSON.stringify(entry.details, null, 2)}
+                </pre>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Evento</label>
-                <input 
-                  type="text" 
-                  value={item.evento}
-                  onChange={(e) => updateHistoryItem(index, 'evento', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
-                <input 
-                  type="text" 
-                  value={item.responsable}
-                  onChange={(e) => updateHistoryItem(index, 'responsable', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-              <textarea 
-                rows={2}
-                value={item.notas || ''}
-                onChange={(e) => updateHistoryItem(index, 'notas', e.target.value)}
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-              ></textarea>
-            </div>
+            )}
           </div>
         ))}
       </div>
-      
-      <button 
-        type="button" 
-        onClick={addHistoryItem}
-        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Agregar Evento
-      </button>
     </div>
   );
 };
