@@ -170,23 +170,35 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   };
 
   const handleNumeroSerieBlur = (numeroSerieIngresado: string) => {
-    if (!numeroSerieIngresado) return; // No hacer nada si el campo está vacío
+    if (!numeroSerieIngresado) return;
 
-    const otEncontrada = mockOrdenesTrabajo.find(ot => ot.numeroSerie === numeroSerieIngresado);
+    const trimmedNumeroSerie = numeroSerieIngresado.trim();
+    if (!trimmedNumeroSerie) return; // No hacer nada si después de trim queda vacío
+
+    const otEncontrada = mockOrdenesTrabajo.find(ot => String(ot.numeroSerie).trim() === trimmedNumeroSerie);
+    console.log("Número de Serie Ingresado (trimmed):", trimmedNumeroSerie);
+    console.log("OT Encontrada:", otEncontrada);
 
     if (otEncontrada) {
-      setWorkOrder(prevWorkOrder => ({
-        ...prevWorkOrder,
-        tipoProducto: otEncontrada.tipoProducto || prevWorkOrder.tipoProducto,
-        orientacion: otEncontrada.orientacion || prevWorkOrder.orientacion,
-        reduccion: otEncontrada.reduccion || prevWorkOrder.reduccion,
-        cliente: otEncontrada.cliente || prevWorkOrder.cliente,
-        vendedor: otEncontrada.vendedor || prevWorkOrder.vendedor,
-        modelo: otEncontrada.modelo || prevWorkOrder.modelo,
-        fechaVentaCliente: otEncontrada.fechaVentaCliente || prevWorkOrder.fechaVentaCliente,
-        producto: otEncontrada.producto || prevWorkOrder.producto,
-        productoOtro: otEncontrada.productoOtro || prevWorkOrder.productoOtro,
-      }));
+      console.log("Autocompletando con datos de OT Encontrada:", otEncontrada);
+      setWorkOrder(prevWorkOrder => {
+        // Solo actualiza los campos si otEncontrada tiene un valor para ellos (diferente de undefined)
+        // Si el valor en otEncontrada es un string vacío, se usará ese string vacío.
+        const updates: Partial<OrdenTrabajo> = {};
+        if (otEncontrada.tipoProducto !== undefined) updates.tipoProducto = otEncontrada.tipoProducto;
+        if (otEncontrada.orientacion !== undefined) updates.orientacion = otEncontrada.orientacion;
+        if (otEncontrada.reduccion !== undefined) updates.reduccion = otEncontrada.reduccion;
+        if (otEncontrada.cliente !== undefined) updates.cliente = otEncontrada.cliente;
+        if (otEncontrada.vendedor !== undefined) updates.vendedor = otEncontrada.vendedor;
+        if (otEncontrada.modelo !== undefined) updates.modelo = otEncontrada.modelo;
+        if (otEncontrada.fechaVentaCliente !== undefined) updates.fechaVentaCliente = otEncontrada.fechaVentaCliente;
+        if (otEncontrada.producto !== undefined) updates.producto = otEncontrada.producto;
+        if (otEncontrada.productoOtro !== undefined) updates.productoOtro = otEncontrada.productoOtro;
+        // También es importante actualizar el 'estado' y otros campos relevantes si es necesario
+        // por ahora solo los que pidió el usuario explícitamente.
+
+        return { ...prevWorkOrder, ...updates };
+      });
 
       addChangeLogEntry({
         changeType: "HEADER_FIELD_UPDATE", // Podríamos crear un ChangeType específico para autocompletado
