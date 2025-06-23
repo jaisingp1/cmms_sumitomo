@@ -28,17 +28,21 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="bg-gray-800 text-white shadow-md">
+    <header className="bg-white text-gray-700 shadow-md"> {/* Fondo blanco, texto gris oscuro */}
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
-        <Link to="/" className="text-xl font-bold">
-          MiEmpresa
+        <Link to="/" className="flex items-center">
+          <img
+            src="https://latam.sumitomodrive.com/themes/custom/sdt_tailwind/dist/svgs/logo/colored/sumitomo-drive-technologies.svg"
+            alt="Sumitomo Drive Technologies Logo"
+            className="h-10 mr-3" // Ajustar altura según sea necesario
+          />
         </Link>
 
         {/* Menú Superior */}
         <nav className="flex items-center space-x-6">
-          <Link to="/" className="hover:text-gray-300">Home</Link>
-          <Link to="/profile" className="hover:text-gray-300">Configuración</Link> {/* Enlazado a /profile como se pide */}
+          <Link to="/" className="text-gray-600 hover:text-blue-600">Home</Link>
+          <Link to="/profile" className="text-gray-600 hover:text-blue-600">Configuración</Link>
         </nav>
 
         {/* Información de Usuario y Dropdown */}
