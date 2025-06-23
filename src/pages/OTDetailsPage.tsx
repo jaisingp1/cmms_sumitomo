@@ -52,7 +52,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         // Asegúrate de inicializar todas las propiedades requeridas por OrdenTrabajo
         // Por ejemplo, las pestañas podrían necesitar objetos vacíos o con valores por defecto
         inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
-        limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, fotos: [] },
+        limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, realizadoPor: '', comentarios: '', fotos: [] },
         desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
         diagnosticoPiezas: { piezas: [], fecha: '', realizadoPor: '' },
         presupuesto: { items: [], valorTotal: 0, fechaCreacion: '', creadoPor: '', subtotal: 0, impuestos: 0, totalGeneral: 0 },
@@ -2173,4 +2173,4 @@ const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) =>
   );
 };
 
-export default WorkOrderForm;
+export default WorkOrderForm; // Componente principal del formulario de OT
