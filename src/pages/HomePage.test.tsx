@@ -2,14 +2,18 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter as Router } from 'react-router-dom'; // Or MemoryRouter
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import HomePage from './HomePage';
 import { mockOrdenesTrabajo } from '../data/dropdownData';
 
-const mockedNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'), // use actual for all non-hook parts
-  useNavigate: () => mockedNavigate,
-}));
+const mockedNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: () => mockedNavigate,
+  };
+});
 
 describe('HomePage', () => {
   beforeEach(() => {

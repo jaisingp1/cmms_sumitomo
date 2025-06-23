@@ -23,9 +23,10 @@ const OTDetailsWrapper = () => {
   return <OTDetailsPage ordenTrabajo={ordenTrabajo} />;
 };
 
-function App() {
+// Componente que contiene la lógica de las rutas y el layout
+const AppContent = () => {
   return (
-    <Router>
+    <>
       <Header />
       <main className="pt-4"> {/* Añadimos un padding top para que el contenido no quede debajo del header fijo si lo fuera */}
         <Routes>
@@ -35,8 +36,20 @@ function App() {
           {/* Aquí se podrían añadir más rutas en el futuro */}
         </Routes>
       </main>
+    </>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
 
+// Export AppContent for testing purposes if needed, though App.test.jsx can also be refactored
+// to test App and let its internal BrowserRouter work, if we adjust how initial entries are set.
+// For now, we'll adjust App.test.jsx to use AppContent.
+export { AppContent };
 export default App;
