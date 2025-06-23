@@ -410,30 +410,57 @@ const isTabEnabled = (tabName: string, currentStatus: string) => {
 // Inspection Tab
 const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
   const handleCommentsChange = (newComments: string) => {
-    setWorkOrder(prev => ({ ...prev, diagnosticoInicial: newComments }));
+    setWorkOrder(prev => ({
+      ...prev,
+      inspeccionVisual: {
+        ...(prev.inspeccionVisual || { realizadoPor: "CurrentUser", fecha: new Date().toISOString() }), // Ensure inspeccionVisual object exists
+        comentarios: newComments
+      }
+    }));
   };
 
   const handleCommentsBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
     const newComments = event.target.value;
-    const oldComments = workOrder.diagnosticoInicial || "";
+    const oldComments = workOrder.inspeccionVisual?.comentarios || "";
     if (newComments !== oldComments) {
       addChangeLogEntry({
         changeType: "INSPECTION_UPDATE",
         description: "Comentarios de inspección actualizados.",
-        details: { field: "diagnosticoInicial", oldValue: oldComments, newValue: newComments }
+        details: { field: "inspeccionVisual.comentarios", oldValue: oldComments, newValue: newComments }
       });
+      // Ensure other required fields for inspeccionVisual are set if not present
+      if (!workOrder.inspeccionVisual?.realizadoPor || !workOrder.inspeccionVisual?.fecha) {
+        setWorkOrder(prev => ({
+          ...prev,
+          inspeccionVisual: {
+            ...(prev.inspeccionVisual || {}),
+            comentarios: newComments, // Already set by handleCommentsChange if it was called
+            realizadoPor: prev.inspeccionVisual?.realizadoPor || "CurrentUser",
+            fecha: prev.inspeccionVisual?.fecha || new Date().toISOString()
+          }
+        }));
+      }
     }
   };
 
   const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
+    const newPhotoEntry = { // Conforms to FotoEntry structure (assuming url is the dataUrl)
+      url: photoDataUrl,
+      descripcion: fileName,
+      fecha: new Date().toISOString(),
+      subidoPor: "CurrentUser" // Placeholder
+    };
     setWorkOrder(prev => ({
       ...prev,
-      fotos: [...(prev.fotos || []), photoDataUrl] // Storing data URL directly
+      inspeccionVisual: {
+        ...(prev.inspeccionVisual || { realizadoPor: "CurrentUser", fecha: new Date().toISOString() }),
+        fotos: [...(prev.inspeccionVisual?.fotos || []), newPhotoEntry]
+      }
     }));
     addChangeLogEntry({
       changeType: "INSPECTION_UPDATE",
       description: `Foto '${fileName}' agregada a inspección.`,
-      details: { action: "ADD_PHOTO", tab: "inspeccion", fileName }
+      details: { action: "ADD_PHOTO", tab: "inspeccionVisual", fileName }
     });
   };
   
@@ -445,7 +472,7 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
         <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios</label>
         <textarea 
           rows={4}
-          value={workOrder.diagnosticoInicial || ''}
+          value={workOrder.inspeccionVisual?.comentarios || ''}
           onChange={(e) => handleCommentsChange(e.target.value)}
           onBlur={handleCommentsBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -455,11 +482,11 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(workOrder.fotos || []).map((foto, index) => (
+          {(workOrder.inspeccionVisual?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
-              src={foto} // Assuming 'foto' is the data URL string
-              alt={`Inspección ${index + 1}`} 
+              src={fotoEntry.url}
+              alt={fotoEntry.descripcion || `Inspección ${index + 1}`}
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
           ))}
@@ -492,62 +519,90 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
 
 // Cleaning Tab
 const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  const handleFieldChange = (field: string, value: any) => {
-    const oldValue = workOrder.limpieza?.[field] || "";
+  const handleFieldChange = (field: keyof OrdenTrabajo['limpiezaEquipo'], value: any) => {
+    const oldValue = workOrder.limpiezaEquipo?.[field] || "";
+    // Ensure limpiezaEquipo object and its mandatory fields exist before updating
+    const currentLimpiezaEquipo = workOrder.limpiezaEquipo || { realizadoPor: "CurrentUser", fechaRealizacion: new Date().toISOString() };
+
     if (value !== oldValue) {
       setWorkOrder(prev => ({
         ...prev,
-        limpieza: {
-          ...(prev.limpieza || {}),
-          [field]: value
+        limpiezaEquipo: {
+          ...currentLimpiezaEquipo,
+          [field]: value,
+          realizadoPor: currentLimpiezaEquipo.realizadoPor || "CurrentUser", // Ensure mandatory field
         }
       }));
       const fieldNameMappings: Record<string, string> = {
         tipoLavado: "Tipo de Lavado",
         fechaRealizacion: "Fecha de Realización",
-        realizadoPor: "Realizado por",
-        notas: "Notas"
+        internoOProveedor: "Realizado por (Interno/Proveedor)", // Corrected mapping
+        comentarios: "Comentarios" // Changed from notas
       };
       const displayFieldName = fieldNameMappings[field] || field;
       addChangeLogEntry({
         changeType: "CLEANING_UPDATE",
         description: `Campo de limpieza '${displayFieldName}' cambiado a '${value || "N/A"}'.`,
-        details: { tab: "limpieza", field: displayFieldName, oldValue, newValue: value }
+        details: { tab: "limpiezaEquipo", field: displayFieldName, oldValue, newValue: value }
       });
     }
   };
 
-  const handleNotesChange = (newNotes: string) => {
+  const handleCommentsChange = (newComments: string) => {
+     const currentLimpiezaEquipo = workOrder.limpiezaEquipo || { realizadoPor: "CurrentUser", fechaRealizacion: new Date().toISOString() };
     setWorkOrder(prev => ({
       ...prev,
-      limpieza: { ...(prev.limpieza || {}), notas: newNotes }
+      limpiezaEquipo: {
+        ...currentLimpiezaEquipo,
+        comentarios: newComments,
+        realizadoPor: currentLimpiezaEquipo.realizadoPor || "CurrentUser",
+      }
     }));
   };
 
-  const handleNotesBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-    const newNotes = event.target.value;
-    const oldNotes = workOrder.limpieza?.notas || "";
-    if (newNotes !== oldNotes) {
+  const handleCommentsBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newComments = event.target.value;
+    const oldComments = workOrder.limpiezaEquipo?.comentarios || "";
+    if (newComments !== oldComments) {
       addChangeLogEntry({
         changeType: "CLEANING_UPDATE",
-        description: "Notas de limpieza actualizadas.",
-        details: { tab: "limpieza", field: "notas", oldValue: oldNotes, newValue: newNotes }
+        description: "Comentarios de limpieza actualizados.",
+        details: { tab: "limpiezaEquipo", field: "comentarios", oldValue: oldComments, newValue: newComments }
       });
+       // Ensure mandatory fields if object was just created
+      if (!workOrder.limpiezaEquipo?.realizadoPor) {
+        setWorkOrder(prev => ({
+          ...prev,
+          limpiezaEquipo: {
+            ...(prev.limpiezaEquipo || {}),
+            comentarios: newComments,
+            realizadoPor: "CurrentUser",
+            fechaRealizacion: prev.limpiezaEquipo?.fechaRealizacion || new Date().toISOString(),
+          }
+        }));
+      }
     }
   };
 
   const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
+    const newPhotoEntry = {
+      url: photoDataUrl,
+      descripcion: fileName,
+      fecha: new Date().toISOString(),
+      subidoPor: "CurrentUser"
+    };
     setWorkOrder(prev => ({
       ...prev,
-      limpieza: {
-        ...(prev.limpieza || {}),
-        fotos: [...(prev.limpieza?.fotos || []), photoDataUrl]
+      limpiezaEquipo: {
+        ...(prev.limpiezaEquipo || { realizadoPor: "CurrentUser", fechaRealizacion: new Date().toISOString() }),
+        fotos: [...(prev.limpiezaEquipo?.fotos || []), newPhotoEntry],
+        realizadoPor: prev.limpiezaEquipo?.realizadoPor || "CurrentUser",
       }
     }));
     addChangeLogEntry({
       changeType: "CLEANING_UPDATE",
       description: `Foto '${fileName}' agregada a limpieza.`,
-      details: { action: "ADD_PHOTO", tab: "limpieza", fileName }
+      details: { action: "ADD_PHOTO", tab: "limpiezaEquipo", fileName }
     });
   };
 
@@ -559,7 +614,7 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Lavado</label>
           <select 
-            value={workOrder.limpieza?.tipoLavado || ''}
+            value={workOrder.limpiezaEquipo?.tipoLavado || ''}
             onChange={(e) => handleFieldChange('tipoLavado', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
@@ -573,7 +628,7 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
           <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Realización</label>
           <input 
             type="date" 
-            value={workOrder.limpieza?.fechaRealizacion || ''}
+            value={workOrder.limpiezaEquipo?.fechaRealizacion || ''}
             onChange={(e) => handleFieldChange('fechaRealizacion', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
@@ -582,24 +637,24 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Realizado por</label>
           <select 
-            value={workOrder.limpieza?.realizadoPor || ''}
-            onChange={(e) => handleFieldChange('realizadoPor', e.target.value)}
+            value={workOrder.limpiezaEquipo?.internoOProveedor || ''}
+            onChange={(e) => handleFieldChange('internoOProveedor', e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           >
             <option value="">Seleccione...</option>
-            <option value="interno">Interno</option>
-            <option value="proveedor">Proveedor</option>
+            <option value="Interno">Interno</option>
+            <option value="Proveedor">Proveedor</option>
           </select>
         </div>
       </div>
       
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios</label> {/* Changed from Notas */}
         <textarea 
           rows={4}
-          value={workOrder.limpieza?.notas || ''}
-          onChange={(e) => handleNotesChange(e.target.value)}
-          onBlur={handleNotesBlur}
+          value={workOrder.limpiezaEquipo?.comentarios || ''}
+          onChange={(e) => handleCommentsChange(e.target.value)}
+          onBlur={handleCommentsBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -607,11 +662,11 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(workOrder.limpieza?.fotos || []).map((foto, index) => (
+          {(workOrder.limpiezaEquipo?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
-              src={foto} 
-              alt={`Limpieza ${index + 1}`} 
+              src={fotoEntry.url}
+              alt={fotoEntry.descripcion || `Limpieza ${index + 1}`}
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
           ))}
@@ -644,8 +699,67 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
 
 // Disassembly Tab
 const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for this tab's fields (accion, fotos)
-  // using addChangeLogEntry, similar to InspectionTab and CleaningTab.
+  const currentDesarme = workOrder.desarme || { fecha: new Date().toISOString(), realizadoPor: "CurrentUser" };
+
+  const handleAccionChange = (newAccion: string) => {
+    setWorkOrder(prev => ({
+      ...prev,
+      desarme: {
+        ...currentDesarme,
+        accionARealizar: newAccion,
+        realizadoPor: currentDesarme.realizadoPor || "CurrentUser",
+        fecha: currentDesarme.fecha || new Date().toISOString(),
+      }
+    }));
+  };
+
+  const handleAccionBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newAccion = event.target.value;
+    const oldAccion = workOrder.desarme?.accionARealizar || "";
+    if (newAccion !== oldAccion) {
+      addChangeLogEntry({
+        changeType: "DISASSEMBLY_UPDATE",
+        description: "Acción a realizar en desarme actualizada.",
+        details: { tab: "desarme", field: "accionARealizar", oldValue: oldAccion, newValue: newAccion }
+      });
+       // Ensure mandatory fields if object was just created
+      if (!workOrder.desarme?.realizadoPor || !workOrder.desarme?.fecha) {
+         setWorkOrder(prev => ({
+          ...prev,
+          desarme: {
+            ...(prev.desarme || {}),
+            accionARealizar: newAccion,
+            realizadoPor: prev.desarme?.realizadoPor || "CurrentUser",
+            fecha: prev.desarme?.fecha || new Date().toISOString(),
+          }
+        }));
+      }
+    }
+  };
+
+  const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
+    const newPhotoEntry: FotoEntry = { // Explicitly use FotoEntry type
+      url: photoDataUrl,
+      descripcion: fileName,
+      fecha: new Date().toISOString(),
+      subidoPor: "CurrentUser" // Placeholder
+    };
+    setWorkOrder(prev => ({
+      ...prev,
+      desarme: {
+        ...currentDesarme,
+        fotos: [...(currentDesarme.fotos || []), newPhotoEntry],
+        realizadoPor: currentDesarme.realizadoPor || "CurrentUser",
+        fecha: currentDesarme.fecha || new Date().toISOString(),
+      }
+    }));
+    addChangeLogEntry({
+      changeType: "DISASSEMBLY_UPDATE",
+      description: `Foto '${fileName}' agregada a desarme.`,
+      details: { action: "ADD_PHOTO", tab: "desarme", fileName }
+    });
+  };
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Desarme</h3>
@@ -654,14 +768,9 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
         <label className="block text-sm font-medium text-gray-700 mb-2">Acción a Realizar</label>
         <textarea 
           rows={4}
-          value={workOrder.desarme?.accion || ''}
-          onChange={(e) => setWorkOrder(prev => ({
-            ...prev,
-            desarme: {
-              ...prev.desarme,
-              accion: e.target.value
-            }
-          }))}
+          value={workOrder.desarme?.accionARealizar || ''}
+          onChange={(e) => handleAccionChange(e.target.value)}
+          onBlur={handleAccionBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -669,11 +778,11 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(workOrder.desarme?.fotos || []).map((foto, index) => (
+          {(workOrder.desarme?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
-              src={foto} 
-              alt={`Desarme ${index + 1}`} 
+              src={fotoEntry.url}
+              alt={fotoEntry.descripcion || `Desarme ${index + 1}`}
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
           ))}
@@ -688,14 +797,8 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target && loadEvent.target.result) {
-                      setWorkOrder(prev => ({
-                        ...prev,
-                        desarme: {
-                          ...prev.desarme,
-                          fotos: [...(prev.desarme?.fotos || []), loadEvent.target.result as string]
-                        }
-                      }));
+                    if (loadEvent.target && loadEvent.target.result) { // Null check
+                      handleAddPhoto(loadEvent.target.result as string, file.name);
                     }
                   };
                   reader.readAsDataURL(file);
@@ -712,34 +815,130 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
 
 // Parts Tab
 const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for addPart, updatePart, removePart, uploadPartPhoto
-  // using addChangeLogEntry.
+  const currentDiagnosticoPiezas = workOrder.diagnosticoPiezas || {
+    piezas: [],
+    fecha: new Date().toISOString(),
+    realizadoPor: "CurrentUser"
+  };
+
   const addPart = () => {
+    const newPart: PiezaDetalle = { // Conforms to PiezaDetalle
+      nombre: `Nueva Pieza ${ (currentDiagnosticoPiezas.piezas || []).length + 1}`, // Default name
+      decision: '', // Default empty
+      // foto, mediciones, ensayosNoDestructivos, comentarios are optional
+    };
     setWorkOrder(prev => ({
       ...prev,
-      piezas: [
-        ...(prev.piezas || []),
-        { foto: '', mediciones: '', ensayos: '', recomendacion: '' }
-      ]
+      diagnosticoPiezas: {
+        ...currentDiagnosticoPiezas,
+        piezas: [...(currentDiagnosticoPiezas.piezas || []), newPart],
+        fecha: currentDiagnosticoPiezas.fecha || new Date().toISOString(),
+        realizadoPor: currentDiagnosticoPiezas.realizadoPor || "CurrentUser",
+      }
     }));
+    addChangeLogEntry({
+      changeType: "PARTS_UPDATE",
+      description: `Nueva pieza '${newPart.nombre}' agregada a diagnóstico.`,
+      details: { action: "ADD_PART", tab: "diagnosticoPiezas", partName: newPart.nombre }
+    });
   };
   
-  const updatePart = (index, field, value) => {
-    const updatedParts = [...workOrder.piezas];
-    updatedParts[index][field] = value;
-    setWorkOrder(prev => ({ ...prev, piezas: updatedParts }));
+  const updatePart = (index: number, field: keyof PiezaDetalle, value: any) => {
+    const oldParts = currentDiagnosticoPiezas.piezas || [];
+    const updatedParts = oldParts.map((part, i) =>
+      i === index ? { ...part, [field]: value } : part
+    );
+    const oldPartValue = oldParts[index]?.[field];
+
+    setWorkOrder(prev => ({
+      ...prev,
+      diagnosticoPiezas: {
+        ...currentDiagnosticoPiezas,
+        piezas: updatedParts,
+        fecha: currentDiagnosticoPiezas.fecha || new Date().toISOString(),
+        realizadoPor: currentDiagnosticoPiezas.realizadoPor || "CurrentUser",
+      }
+    }));
+    addChangeLogEntry({
+      changeType: "PARTS_UPDATE",
+      description: `Campo '${field}' de pieza '${updatedParts[index]?.nombre || index + 1}' actualizado a '${value}'.`,
+      details: {
+        action: "UPDATE_PART_FIELD",
+        tab: "diagnosticoPiezas",
+        partIndex: index,
+        partName: updatedParts[index]?.nombre,
+        field,
+        oldValue: oldPartValue,
+        newValue: value
+      }
+    });
   };
   
-  const removePart = (index) => {
-    const updatedParts = workOrder.piezas.filter((_, i) => i !== index);
-    setWorkOrder(prev => ({ ...prev, piezas: updatedParts }));
+  const removePart = (index: number) => {
+    const oldParts = currentDiagnosticoPiezas.piezas || [];
+    const removedPart = oldParts[index];
+    const updatedParts = oldParts.filter((_, i) => i !== index);
+    setWorkOrder(prev => ({
+      ...prev,
+      diagnosticoPiezas: {
+        ...currentDiagnosticoPiezas,
+        piezas: updatedParts,
+        fecha: currentDiagnosticoPiezas.fecha || new Date().toISOString(),
+        realizadoPor: currentDiagnosticoPiezas.realizadoPor || "CurrentUser",
+      }
+    }));
+    addChangeLogEntry({
+      changeType: "PARTS_UPDATE",
+      description: `Pieza '${removedPart?.nombre || index + 1}' eliminada de diagnóstico.`,
+      details: {
+        action: "REMOVE_PART",
+        tab: "diagnosticoPiezas",
+        partIndex: index,
+        removedPartName: removedPart?.nombre,
+        removedPartDetails: removedPart
+      }
+    });
   };
   
-  const uploadPartPhoto = (index, file) => {
+  const uploadPartPhoto = (index: number, file: File) => {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
-      if (loadEvent.target && loadEvent.target.result) { // Ensure target and result exist
-        updatePart(index, 'foto', loadEvent.target.result as string);
+      if (loadEvent.target && loadEvent.target.result) {
+        const photoDataUrl = loadEvent.target.result as string;
+        const newPhotoEntry: FotoEntry = {
+          url: photoDataUrl,
+          descripcion: `Foto Pieza ${index + 1} - ${file.name}`,
+          fecha: new Date().toISOString(),
+          subidoPor: "CurrentUser"
+        };
+        // Update the specific part's 'foto' field
+        const oldParts = currentDiagnosticoPiezas.piezas || [];
+        const oldPartFoto = oldParts[index]?.foto;
+        const updatedParts = oldParts.map((part, i) =>
+          i === index ? { ...part, foto: newPhotoEntry } : part
+        );
+
+        setWorkOrder(prev => ({
+          ...prev,
+          diagnosticoPiezas: {
+            ...currentDiagnosticoPiezas,
+            piezas: updatedParts,
+            fecha: currentDiagnosticoPiezas.fecha || new Date().toISOString(),
+            realizadoPor: currentDiagnosticoPiezas.realizadoPor || "CurrentUser",
+          }
+        }));
+        addChangeLogEntry({
+          changeType: "PARTS_UPDATE",
+          description: `Foto '${file.name}' agregada a pieza '${updatedParts[index]?.nombre || index + 1}'.`,
+          details: {
+            action: "UPLOAD_PART_PHOTO",
+            tab: "diagnosticoPiezas",
+            partIndex: index,
+            partName: updatedParts[index]?.nombre,
+            fileName: file.name,
+            oldFoto: oldPartFoto
+          }
+        });
       }
     };
     reader.readAsDataURL(file);
@@ -747,13 +946,13 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
   
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Piezas</h3>
+      <h3 className="text-lg font-medium mb-4">Diagnóstico de Piezas</h3> {/* Title updated */}
       
       <div className="space-y-6">
-        {(workOrder.piezas || []).map((part, index) => (
+        {(currentDiagnosticoPiezas.piezas || []).map((part, index) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium">Pieza {index + 1}</h4>
+              <h4 className="text-md font-medium">Pieza: {part.nombre || `Pieza ${index + 1}`}</h4>
               <button 
                 type="button" 
                 onClick={() => removePart(index)}
@@ -764,12 +963,21 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Pieza</label>
+                <input
+                  type="text"
+                  value={part.nombre}
+                  onChange={(e) => updatePart(index, 'nombre', e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Foto</label>
                 {part.foto ? (
                   <img 
-                    src={part.foto} 
-                    alt={`Pieza ${index + 1}`} 
+                    src={part.foto.url}
+                    alt={part.foto.descripcion || `Pieza ${index + 1}`}
                     className="w-full h-32 object-cover rounded-lg border border-gray-200 mb-2"
                   />
                 ) : (
@@ -793,7 +1001,7 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
                 <label className="block text-sm font-medium text-gray-700 mb-2">Mediciones Tomadas</label>
                 <textarea 
                   rows={3}
-                  value={part.mediciones}
+                  value={part.mediciones || ''}
                   onChange={(e) => updatePart(index, 'mediciones', e.target.value)}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 ></textarea>
@@ -803,24 +1011,33 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
                 <label className="block text-sm font-medium text-gray-700 mb-2">Ensayos No Destructivos Realizados</label>
                 <textarea 
                   rows={3}
-                  value={part.ensayos}
-                  onChange={(e) => updatePart(index, 'ensayos', e.target.value)}
+                  value={part.ensayosNoDestructivos || ''}
+                  onChange={(e) => updatePart(index, 'ensayosNoDestructivos', e.target.value)}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                 ></textarea>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Recomendación</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Recomendación (Decisión)</label>
                 <select 
-                  value={part.recomendacion}
-                  onChange={(e) => updatePart(index, 'recomendacion', e.target.value)}
+                  value={part.decision || ''}
+                  onChange={(e) => updatePart(index, 'decision', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 >
                   <option value="">Seleccione...</option>
-                  <option value="reemplazar">Reemplazar</option>
-                  <option value="reparar">Reparar</option>
-                  <option value="reutilizar">Reutilizar</option>
+                  <option value="Reemplazar">Reemplazar</option>
+                  <option value="Reparar">Reparar</option>
+                  <option value="Reutilizar">Reutilizar</option>
                 </select>
+              </div>
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios Adicionales</label>
+                <textarea
+                  rows={3}
+                  value={part.comentarios || ''}
+                  onChange={(e) => updatePart(index, 'comentarios', e.target.value)}
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                ></textarea>
               </div>
             </div>
           </div>
@@ -840,67 +1057,167 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
 
 // Budget Tab
 const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for addItem, updateItem, removeItem, and checkbox approval
-  // using addChangeLogEntry.
+  const currentPresupuesto = workOrder.presupuesto || {
+    items: [],
+    valorTotal: 0,
+    fechaCreacion: new Date().toISOString(),
+    creadoPor: "CurrentUser"
+  };
+
   const addItem = () => {
-    setWorkOrder(prev => ({
-      ...prev,
-      presupuesto: {
-        ...prev.presupuesto,
-        items: [
-          ...(prev.presupuesto?.items || []),
-          { descripcion: '', cantidad: 1, precioUnitario: 0, total: 0 }
-        ]
-      }
-    }));
+    const newItem: PresupuestoItem = {
+      descripcion: '',
+      cantidad: 1,
+      valorUnitario: 0,
+      valorTotal: 0
+    };
+    setWorkOrder(prev => {
+      const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        presupuesto: {
+          ...presupuesto,
+          items: [...(presupuesto.items || []), newItem],
+          // Ensure mandatory fields are present
+          fechaCreacion: presupuesto.fechaCreacion || new Date().toISOString(),
+          creadoPor: presupuesto.creadoPor || "CurrentUser",
+          valorTotal: presupuesto.valorTotal || 0,
+        }
+      };
+    });
+    addChangeLogEntry({
+      changeType: "BUDGET_ITEM_ADD",
+      description: "Nuevo ítem agregado al presupuesto.",
+      details: { tab: "presupuesto", item: newItem }
+    });
   };
   
-  const updateItem = (index, field, value) => {
-    const updatedItems = [...workOrder.presupuesto.items];
-    updatedItems[index][field] = value;
-    
-    // Update total if quantity or price changes
-    if (field === 'cantidad' || field === 'precioUnitario') {
-      updatedItems[index].total = updatedItems[index].cantidad * updatedItems[index].precioUnitario;
-    }
-    
-    setWorkOrder(prev => ({
-      ...prev,
-      presupuesto: {
-        ...prev.presupuesto,
-        items: updatedItems
+  const updateItem = (index: number, field: keyof PresupuestoItem, value: any) => {
+    const oldItems = currentPresupuesto.items || [];
+    let oldItemValue: any;
+
+    const updatedItems = oldItems.map((item, i) => {
+      if (i === index) {
+        oldItemValue = item[field];
+        const newItem = { ...item, [field]: value };
+        if (field === 'cantidad' || field === 'valorUnitario') {
+          newItem.valorTotal = (Number(newItem.cantidad) || 0) * (Number(newItem.valorUnitario) || 0);
+        }
+        return newItem;
       }
-    }));
+      return item;
+    });
+    
+    setWorkOrder(prev => {
+      const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        presupuesto: {
+          ...presupuesto,
+          items: updatedItems,
+          fechaCreacion: presupuesto.fechaCreacion || new Date().toISOString(),
+          creadoPor: presupuesto.creadoPor || "CurrentUser",
+          valorTotal: presupuesto.valorTotal || 0,
+        }
+      }
+    });
+    addChangeLogEntry({
+      changeType: "BUDGET_ITEM_UPDATE",
+      description: `Ítem '${updatedItems[index]?.descripcion || index + 1}' del presupuesto actualizado (campo: ${field}).`,
+      details: {
+        tab: "presupuesto",
+        itemIndex: index,
+        field,
+        oldValue: oldItemValue,
+        newValue: value,
+        itemDescription: updatedItems[index]?.descripcion
+      }
+    });
   };
   
-  const removeItem = (index) => {
-    const updatedItems = workOrder.presupuesto.items.filter((_, i) => i !== index);
-    setWorkOrder(prev => ({
-      ...prev,
-      presupuesto: {
-        ...prev.presupuesto,
-        items: updatedItems
+  const removeItem = (index: number) => {
+    const oldItems = currentPresupuesto.items || [];
+    const removedItem = oldItems[index];
+    const updatedItems = oldItems.filter((_, i) => i !== index);
+    setWorkOrder(prev => {
+      const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        presupuesto: {
+          ...presupuesto,
+          items: updatedItems,
+          fechaCreacion: presupuesto.fechaCreacion || new Date().toISOString(),
+          creadoPor: presupuesto.creadoPor || "CurrentUser",
+          valorTotal: presupuesto.valorTotal || 0,
+        }
       }
-    }));
+    });
+    addChangeLogEntry({
+      changeType: "BUDGET_ITEM_REMOVE",
+      description: `Ítem '${removedItem?.descripcion || index + 1}' eliminado del presupuesto.`,
+      details: { tab: "presupuesto", itemIndex: index, removedItem }
+    });
   };
   
   // Calculate totals
-  const subtotal = workOrder.presupuesto?.items?.reduce((sum, item) => sum + item.total, 0) || 0;
+  const items = workOrder.presupuesto?.items || [];
+  const subtotal = items.reduce((sum, item) => sum + (item.valorTotal || 0), 0);
   const impuestos = subtotal * 0.19; // Assuming 19% tax
   const totalGeneral = subtotal + impuestos;
   
-  // Update totals in state
   useEffect(() => {
-    setWorkOrder(prev => ({
+    // Only update if the calculated totals differ from what's in state, to avoid infinite loops
+    if (
+      workOrder.presupuesto?.subtotal !== subtotal ||
+      workOrder.presupuesto?.impuestos !== impuestos ||
+      workOrder.presupuesto?.totalGeneral !== totalGeneral
+    ) {
+      setWorkOrder(prev => {
+        const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+        return {
+        ...prev,
+        presupuesto: {
+          ...presupuesto,
+          subtotal,
+          impuestos,
+          totalGeneral,
+          // Ensure mandatory fields
+          fechaCreacion: presupuesto.fechaCreacion || new Date().toISOString(),
+          creadoPor: presupuesto.creadoPor || "CurrentUser",
+          valorTotal: presupuesto.valorTotal || 0, // This valorTotal is on presupuesto itself, distinct from item.valorTotal
+        }
+      }});
+    }
+  }, [workOrder.presupuesto, subtotal, impuestos, totalGeneral, setWorkOrder]);
+
+  const handleApprovalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isApproved = e.target.checked;
+    const oldApprovalState = !!workOrder.presupuesto?.aprobado;
+
+    setWorkOrder(prev => {
+      const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+      return {
       ...prev,
       presupuesto: {
-        ...prev.presupuesto,
-        subtotal,
-        impuestos,
-        totalGeneral
+        ...presupuesto,
+        aprobado: isApproved,
+        fechaAprobacion: isApproved ? new Date().toISOString().split('T')[0] : undefined,
+        responsable: isApproved ? (presupuesto.responsable || "CurrentUser") : undefined, // Keep existing responsable or set new
+        // Ensure mandatory fields
+        fechaCreacion: presupuesto.fechaCreacion || new Date().toISOString(),
+        creadoPor: presupuesto.creadoPor || "CurrentUser",
+        valorTotal: presupuesto.valorTotal || 0,
       }
-    }));
-  }, [subtotal, impuestos, totalGeneral]);
+    }});
+
+    if (isApproved !== oldApprovalState) {
+      addChangeLogEntry({
+        changeType: "BUDGET_APPROVAL",
+        description: `Presupuesto ${isApproved ? 'aprobado' : 'desaprobado'}.`,
+        details: { tab: "presupuesto", approved: isApproved, oldState: oldApprovalState }
+      });
+    }
+  };
   
   return (
     <div>
@@ -912,8 +1229,8 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unitario</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Unitario</th> {/* Corrected Label */}
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th> {/* Corrected Label */}
               <th scope="col" className="relative px-6 py-3">
                 <span className="sr-only">Acciones</span>
               </th>
@@ -948,18 +1265,18 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
                   <input 
                     type="number" 
                     min="0"
-                    value={item.precioUnitario}
+                    value={item.valorUnitario} // Corrected field
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
                       if (!isNaN(value)) {
-                        updateItem(index, 'precioUnitario', value);
+                        updateItem(index, 'valorUnitario', value); // Corrected field
                       }
                     }}
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  ${(item.total || 0).toFixed(2)}
+                  ${(item.valorTotal || 0).toFixed(2)} {/* Corrected field */}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button 
@@ -991,44 +1308,37 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subtotal</label>
             <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-              ${(workOrder.presupuesto?.subtotal || 0).toFixed(2)}
+              ${(workOrder.presupuesto?.subtotal ?? subtotal).toFixed(2)}
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Impuestos (19%)</label>
             <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-              ${(workOrder.presupuesto?.impuestos || 0).toFixed(2)}
+              ${(workOrder.presupuesto?.impuestos ?? impuestos).toFixed(2)}
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Total General</label>
             <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2 font-bold">
-              ${(workOrder.presupuesto?.totalGeneral || 0).toFixed(2)}
+              ${(workOrder.presupuesto?.totalGeneral ?? totalGeneral).toFixed(2)}
             </div>
           </div>
         </div>
         
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Aprobación</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Aprobación Interna</label>
           <div className="flex items-center">
             <input 
               type="checkbox" 
-              id="aprobado"
+              id="presupuesto_aprobado_interno" // Unique ID
               checked={!!workOrder.presupuesto?.aprobado}
-              onChange={(e) => setWorkOrder(prev => ({
-                ...prev,
-                presupuesto: {
-                  ...prev.presupuesto,
-                  aprobado: e.target.checked,
-                  fechaAprobacion: e.target.checked ? new Date().toISOString().split('T')[0] : undefined
-                }
-              }))}
+              onChange={handleApprovalChange}
               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label htmlFor="aprobado" className="ml-2 block text-sm text-gray-700">
-              Presupuesto aprobado
+            <label htmlFor="presupuesto_aprobado_interno" className="ml-2 block text-sm text-gray-700">
+              Presupuesto aprobado internamente
             </label>
           </div>
           
@@ -1036,16 +1346,25 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
             <div className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Responsable</label>
-                  <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-                    {workOrder.presupuesto.responsable || "Técnico de Calidad"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700">Responsable Aprobación</label>
+                  <input
+                    type="text"
+                    value={workOrder.presupuesto?.responsable || ''}
+                    onChange={(e) => setWorkOrder(prev => {
+                        const presupuesto = prev.presupuesto || { items: [], valorTotal: 0, fechaCreacion: new Date().toISOString(), creadoPor: "CurrentUser" };
+                        return ({
+                        ...prev,
+                        presupuesto: { ...presupuesto, responsable: e.target.value, fechaCreacion: presupuesto.fechaCreacion, valorTotal: presupuesto.valorTotal, creadoPor: presupuesto.creadoPor }
+                      })})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="Nombre del responsable"
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Fecha de Aprobación</label>
                   <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-                    {workOrder.presupuesto.fechaAprobacion || new Date().toISOString().split('T')[0]}
+                    {workOrder.presupuesto?.fechaAprobacion || new Date().toISOString().split('T')[0]}
                   </div>
                 </div>
               </div>
@@ -1059,27 +1378,121 @@ const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
 
 // Repair Tab
 const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for addAdditionalPart, updateAdditionalPart, removeAdditionalPart, and notasReparacion
-  // using addChangeLogEntry.
+  const currentReparacion = workOrder.reparacion || { realizadoPor: "CurrentUser" };
+
   const addAdditionalPart = () => {
-    setWorkOrder(prev => ({
+    const newPart = { nombre: '', cantidad: 1, motivo: '' }; // Conforms to type
+    setWorkOrder(prev => {
+      const reparacion = prev.reparacion || { realizadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        reparacion: {
+          ...reparacion,
+          piezasAdicionales: [...(reparacion.piezasAdicionales || []), newPart],
+          realizadoPor: reparacion.realizadoPor || "CurrentUser",
+        }
+      };
+    });
+    addChangeLogEntry({
+      changeType: "ADDITIONAL_PART_ADD",
+      description: "Pieza adicional agregada a reparación.",
+      details: { tab: "reparacion", part: newPart }
+    });
+  };
+  
+  const updateAdditionalPart = (index: number, field: 'nombre' | 'cantidad' | 'motivo', value: any) => {
+    const oldParts = currentReparacion.piezasAdicionales || [];
+    let oldValueField: any;
+
+    const updatedParts = oldParts.map((part, i) => {
+      if (i === index) {
+        oldValueField = part[field];
+        return { ...part, [field]: value };
+      }
+      return part;
+    });
+
+    setWorkOrder(prev => {
+      const reparacion = prev.reparacion || { realizadoPor: "CurrentUser" };
+      return {
       ...prev,
-      repuestosAdicionales: [
-        ...(prev.repuestosAdicionales || []),
-        { repuesto: '', cantidad: 1, costo: 0 }
-      ]
-    }));
+      reparacion: {
+        ...reparacion,
+        piezasAdicionales: updatedParts,
+        realizadoPor: reparacion.realizadoPor || "CurrentUser",
+      }
+    }});
+    addChangeLogEntry({
+      changeType: "ADDITIONAL_PART_UPDATE",
+      description: `Pieza adicional '${updatedParts[index]?.nombre || index + 1}' actualizada (campo: ${field}).`,
+      details: {
+        tab: "reparacion",
+        partIndex: index,
+        field,
+        oldValue: oldValueField,
+        newValue: value,
+        partDescription: updatedParts[index]?.nombre
+      }
+    });
   };
   
-  const updateAdditionalPart = (index, field, value) => {
-    const updatedParts = [...workOrder.repuestosAdicionales];
-    updatedParts[index][field] = value;
-    setWorkOrder(prev => ({ ...prev, repuestosAdicionales: updatedParts }));
+  const removeAdditionalPart = (index: number) => {
+    const oldParts = currentReparacion.piezasAdicionales || [];
+    const removedPart = oldParts[index];
+    const updatedParts = oldParts.filter((_, i) => i !== index);
+    setWorkOrder(prev => {
+      const reparacion = prev.reparacion || { realizadoPor: "CurrentUser" };
+      return {
+      ...prev,
+      reparacion: {
+        ...reparacion,
+        piezasAdicionales: updatedParts,
+        realizadoPor: reparacion.realizadoPor || "CurrentUser",
+      }
+    }});
+    addChangeLogEntry({
+      changeType: "ADDITIONAL_PART_REMOVE",
+      description: `Pieza adicional '${removedPart?.nombre || index + 1}' eliminada.`,
+      details: { tab: "reparacion", partIndex: index, removedPart }
+    });
   };
-  
-  const removeAdditionalPart = (index) => {
-    const updatedParts = workOrder.repuestosAdicionales.filter((_, i) => i !== index);
-    setWorkOrder(prev => ({ ...prev, repuestosAdicionales: updatedParts }));
+
+  const handleCommentsChange = (newComments: string) => {
+    setWorkOrder(prev => {
+      const reparacion = prev.reparacion || { realizadoPor: "CurrentUser" };
+      return {
+      ...prev,
+      reparacion: {
+        ...reparacion,
+        comentarios: newComments,
+        realizadoPor: reparacion.realizadoPor || "CurrentUser",
+      }
+    }});
+  };
+
+  const handleCommentsBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    const newComments = event.target.value;
+    const oldComments = workOrder.reparacion?.comentarios || "";
+    if (newComments !== oldComments) {
+      addChangeLogEntry({
+        changeType: "REPAIR_NOTES_UPDATE",
+        description: "Notas de reparación actualizadas.",
+        details: { tab: "reparacion", field: "comentarios", oldValue: oldComments, newValue: newComments }
+      });
+      if (!workOrder.reparacion?.realizadoPor) {
+        setWorkOrder(prev => {
+          const reparacion = prev.reparacion || { realizadoPor: "CurrentUser" };
+          return {
+            ...prev,
+            reparacion: {
+              ...reparacion,
+              comentarios: newComments,
+              realizadoPor: reparacion.realizadoPor || "CurrentUser",
+            }
+          }
+        });
+      }
+    }
   };
   
   return (
@@ -1088,28 +1501,28 @@ const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
       
       <div className="mb-6">
         <h4 className="text-md font-medium mb-2">Piezas Adicionales</h4>
-        <p className="text-sm text-gray-500 mb-4">Estas piezas no se cobrarán al cliente.</p>
+        <p className="text-sm text-gray-500 mb-4">Estas piezas no se cobrarán al cliente (se registran por motivos de control interno).</p>
         
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Repuesto</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Pieza</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
                 <th scope="col" className="relative px-6 py-3">
                   <span className="sr-only">Acciones</span>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {(workOrder.repuestosAdicionales || []).map((part, index) => (
+              {(workOrder.reparacion?.piezasAdicionales || []).map((part, index) => (
                 <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input 
                       type="text" 
-                      value={part.repuesto}
-                      onChange={(e) => updateAdditionalPart(index, 'repuesto', e.target.value)}
+                      value={part.nombre}
+                      onChange={(e) => updateAdditionalPart(index, 'nombre', e.target.value)}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                   </td>
@@ -1124,15 +1537,9 @@ const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input 
-                      type="number" 
-                      min="0"
-                      value={part.costo}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value)) {
-                        updateAdditionalPart(index, 'cantidad', value);
-                      }
-                    }}
+                      type="text"
+                      value={part.motivo}
+                      onChange={(e) => updateAdditionalPart(index, 'motivo', e.target.value)}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                   </td>
@@ -1163,11 +1570,12 @@ const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Notas de Reparación</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios de Reparación</label> {/* Label updated */}
         <textarea 
           rows={6}
-          value={workOrder.notasReparacion || ''}
-          onChange={(e) => setWorkOrder(prev => ({ ...prev, notasReparacion: e.target.value }))}
+          value={workOrder.reparacion?.comentarios || ''}
+          onChange={(e) => handleCommentsChange(e.target.value)}
+          onBlur={handleCommentsBlur}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -1177,8 +1585,65 @@ const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCh
 
 // Testing Tab
 const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for tipoPrueba, resultados, and fotos
-  // using addChangeLogEntry.
+  const currentPruebas = workOrder.pruebasDinamicas || { fecha: new Date().toISOString(), realizadoPor: "CurrentUser" };
+
+  const handleInputChange = (field: 'tipoPrueba' | 'resultados', value: string) => {
+    setWorkOrder(prev => ({
+      ...prev,
+      pruebasDinamicas: {
+        ...currentPruebas,
+        [field]: value,
+        realizadoPor: currentPruebas.realizadoPor || "CurrentUser",
+        fecha: currentPruebas.fecha || new Date().toISOString(),
+      }
+    }));
+  };
+
+  const handleInputBlur = (field: 'tipoPrueba' | 'resultados', value: string) => {
+    const oldValue = workOrder.pruebasDinamicas?.[field] || "";
+    if (value !== oldValue) {
+      addChangeLogEntry({
+        changeType: "TESTING_UPDATE",
+        description: `Campo de pruebas dinámicas '${field}' actualizado.`,
+        details: { tab: "pruebasDinamicas", field, oldValue, newValue: value }
+      });
+      if (!workOrder.pruebasDinamicas?.realizadoPor || !workOrder.pruebasDinamicas?.fecha) {
+        setWorkOrder(prev => ({
+          ...prev,
+          pruebasDinamicas: {
+            ...(prev.pruebasDinamicas || {}),
+            [field]:value, // ensure value is set
+            realizadoPor: prev.pruebasDinamicas?.realizadoPor || "CurrentUser",
+            fecha: prev.pruebasDinamicas?.fecha || new Date().toISOString(),
+          }
+        }));
+      }
+    }
+  };
+
+  const handleAddPhoto = (photoDataUrl: string, fileName: string) => {
+    const newPhotoEntry: FotoEntry = {
+      url: photoDataUrl,
+      descripcion: fileName,
+      fecha: new Date().toISOString(),
+      subidoPor: "CurrentUser"
+    };
+    setWorkOrder(prev => ({
+      ...prev,
+      pruebasDinamicas: {
+        ...currentPruebas,
+        fotos: [...(currentPruebas.fotos || []), newPhotoEntry],
+        realizadoPor: currentPruebas.realizadoPor || "CurrentUser",
+        fecha: currentPruebas.fecha || new Date().toISOString(),
+      }
+    }));
+    addChangeLogEntry({
+      changeType: "TESTING_UPDATE",
+      description: `Foto '${fileName}' agregada a pruebas dinámicas.`,
+      details: { action: "ADD_PHOTO", tab: "pruebasDinamicas", fileName }
+    });
+  };
+
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Pruebas Dinámicas</h3>
@@ -1187,14 +1652,9 @@ const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
         <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Prueba</label>
         <input 
           type="text" 
-          value={workOrder.pruebas?.tipoPrueba || ''}
-          onChange={(e) => setWorkOrder(prev => ({
-            ...prev,
-            pruebas: {
-              ...prev.pruebas,
-              tipoPrueba: e.target.value
-            }
-          }))}
+          value={workOrder.pruebasDinamicas?.tipoPrueba || ''}
+          onChange={(e) => handleInputChange('tipoPrueba', e.target.value)}
+          onBlur={(e) => handleInputBlur('tipoPrueba', e.target.value)}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         />
       </div>
@@ -1203,14 +1663,9 @@ const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
         <label className="block text-sm font-medium text-gray-700 mb-2">Resultados</label>
         <textarea 
           rows={6}
-          value={workOrder.pruebas?.resultados || ''}
-          onChange={(e) => setWorkOrder(prev => ({
-            ...prev,
-            pruebas: {
-              ...prev.pruebas,
-              resultados: e.target.value
-            }
-          }))}
+          value={workOrder.pruebasDinamicas?.resultados || ''}
+          onChange={(e) => handleInputChange('resultados', e.target.value)}
+          onBlur={(e) => handleInputBlur('resultados', e.target.value)}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
         ></textarea>
       </div>
@@ -1218,11 +1673,11 @@ const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(workOrder.pruebas?.fotos || []).map((foto, index) => (
+          {(workOrder.pruebasDinamicas?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
-              src={foto} 
-              alt={`Prueba ${index + 1}`} 
+              src={fotoEntry.url}
+              alt={fotoEntry.descripcion || `Prueba ${index + 1}`}
               className="w-full h-32 object-cover rounded-lg border border-gray-200"
             />
           ))}
@@ -1237,14 +1692,8 @@ const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target && loadEvent.target.result) { // Ensure target and result exist
-                      setWorkOrder(prev => ({
-                        ...prev,
-                        pruebas: {
-                          ...prev.pruebas,
-                          fotos: [...(prev.pruebas?.fotos || []), loadEvent.target.result as string]
-                        }
-                      }));
+                    if (loadEvent.target && loadEvent.target.result) {
+                      handleAddPhoto(loadEvent.target.result as string, file.name);
                     }
                   };
                   reader.readAsDataURL(file);
@@ -1261,21 +1710,66 @@ const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
 
 // Quality Tab
 const QualityTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for 'validado' checkbox and signature capture
-  // using addChangeLogEntry.
-  const [signature, setSignature] = useState<string | null>(null);
+  const currentAprobacionCalidad = workOrder.aprobacionCalidad || {
+    aprobado: false,
+    fecha: new Date().toISOString(),
+    aprobadoPor: "CurrentUser"
+  };
   
-  const handleSignatureChange = (e) => {
-    setSignature("Firma digital capturada");
-    setWorkOrder(prev => ({
-      ...prev,
-      calidad: {
-        ...prev.calidad,
-        firma: "Firma digital capturada",
-        responsable: "Técnico de Calidad",
-        fechaValidacion: new Date().toISOString()
-      }
-    }));
+  // Local UI state for signature display, separate from workOrder data
+  const [signatureDisplay, setSignatureDisplay] = useState<string | null>(workOrder.aprobacionCalidad?.firma || null);
+
+  const handleValidationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isApproved = e.target.checked;
+    const oldApprovalStatus = !!workOrder.aprobacionCalidad?.aprobado;
+
+    setWorkOrder(prev => {
+      const aprobacion = prev.aprobacionCalidad || { aprobado: false, fecha: new Date().toISOString(), aprobadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        aprobacionCalidad: {
+          ...aprobacion,
+          aprobado: isApproved,
+          fecha: isApproved ? (aprobacion.fecha || new Date().toISOString()) : aprobacion.fecha, // Keep date or set new if approving
+          aprobadoPor: isApproved ? (aprobacion.aprobadoPor || "CurrentUser") : aprobacion.aprobadoPor, // Keep user or set if approving
+        }
+      };
+    });
+
+    if (isApproved !== oldApprovalStatus) {
+      addChangeLogEntry({
+        changeType: "QUALITY_APPROVAL",
+        description: `Aprobación de calidad ${isApproved ? 'marcada' : 'desmarcada'}.`,
+        details: { tab: "aprobacionCalidad", approved: isApproved, oldStatus: oldApprovalStatus }
+      });
+    }
+  };
+
+  const handleSignatureCapture = () => {
+    const signatureText = "Firma digital capturada"; // This would be actual signature data in a real app
+    setSignatureDisplay(signatureText); // Update local UI state
+
+    const oldFirma = workOrder.aprobacionCalidad?.firma;
+    const responsable = workOrder.aprobacionCalidad?.aprobadoPor || "Técnico de Calidad por Firma"; // Or get current user
+
+    setWorkOrder(prev => {
+       const aprobacion = prev.aprobacionCalidad || { aprobado: false, fecha: new Date().toISOString(), aprobadoPor: "CurrentUser" };
+      return {
+        ...prev,
+        aprobacionCalidad: {
+          ...aprobacion,
+          firma: signatureText,
+          aprobadoPor: responsable, // Associate signature with current responsable
+          fecha: aprobacion.fecha || new Date().toISOString(), // Ensure date is set
+          aprobado: aprobacion.aprobado, // Preserve approval status
+        }
+      };
+    });
+     addChangeLogEntry({
+        changeType: "QUALITY_APPROVAL",
+        description: "Firma electrónica capturada para aprobación de calidad.",
+        details: { tab: "aprobacionCalidad", action: "SIGNATURE_CAPTURED", responsable, oldFirma }
+      });
   };
   
   return (
@@ -1288,54 +1782,46 @@ const QualityTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
           <div className="flex items-center">
             <input 
               type="checkbox" 
-              id="validado"
-              checked={!!workOrder.calidad?.validado}
-              onChange={(e) => setWorkOrder(prev => ({
-                ...prev,
-                calidad: {
-                  ...prev.calidad,
-                  validado: e.target.checked,
-                  responsable: e.target.checked ? "Técnico de Calidad" : undefined,
-                  fechaValidacion: e.target.checked ? new Date().toISOString() : undefined
-                }
-              }))}
+              id="validadoCalidad" // Unique ID
+              checked={!!workOrder.aprobacionCalidad?.aprobado}
+              onChange={handleValidationChange}
               className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
             />
-            <label htmlFor="validado" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="validadoCalidad" className="ml-2 block text-sm text-gray-700">
               Validar y dar inicio para envío al cliente
             </label>
           </div>
           
-          {workOrder.calidad?.validado && (
+          {workOrder.aprobacionCalidad?.aprobado && (
             <div className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Responsable</label>
-                  <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-                    {workOrder.calidad.responsable}
+                  <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-50 p-2">
+                    {workOrder.aprobacionCalidad.aprobadoPor}
                   </div>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Fecha y Hora</label>
-                  <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 p-2">
-                    {new Date(workOrder.calidad.fechaValidacion).toLocaleString()}
+                  <div className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-50 p-2">
+                    {new Date(workOrder.aprobacionCalidad.fecha).toLocaleString()}
                   </div>
                 </div>
               </div>
               
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Firma Electrónica</label>
-                {signature ? (
+                {workOrder.aprobacionCalidad.firma || signatureDisplay ? (
                   <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-                    <p className="text-sm text-gray-600">{signature}</p>
+                    <p className="text-sm text-gray-600">{workOrder.aprobacionCalidad.firma || signatureDisplay}</p>
                   </div>
                 ) : (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <p className="text-sm text-gray-500 mb-4">Haga clic en el botón para capturar su firma electrónica</p>
                     <button 
                       type="button" 
-                      onClick={handleSignatureChange}
+                      onClick={handleSignatureCapture}
                       className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
                       Capturar Firma
@@ -1353,27 +1839,65 @@ const QualityTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
 
 // Closure Tab
 const ClosureTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
-  // TODO: Implement change logging for guia, fechaEnvio, and adjuntos
-  // using addChangeLogEntry.
+  const currentDespacho = workOrder.despacho || {};
+
+  const handleInputChange = (field: 'guiaDespacho' | 'fechaDespacho' | 'despachadoPor' | 'comentarios', value: string) => {
+    const oldValue = currentDespacho[field] || "";
+    setWorkOrder(prev => ({
+      ...prev,
+      despacho: {
+        ...currentDespacho,
+        [field]: value
+      }
+    }));
+    if (value !== oldValue) {
+      addChangeLogEntry({
+        changeType: "CLOSURE_UPDATE",
+        description: `Campo de cierre/despacho '${field}' actualizado.`,
+        details: { tab: "despacho", field, oldValue, newValue: value }
+      });
+    }
+  };
+
+  const handleAddAttachment = (files: FileList | null) => {
+    if (!files) return;
+    const newAttachments: FotoEntry[] = Array.from(files).map(file => ({
+      url: URL.createObjectURL(file), // Using createObjectURL for preview
+      descripcion: file.name,
+      fecha: new Date().toISOString(),
+      subidoPor: "CurrentUser" // Placeholder
+    }));
+
+    setWorkOrder(prev => ({
+      ...prev,
+      despacho: {
+        ...currentDespacho,
+        adjuntos: [...(currentDespacho.adjuntos || []), ...newAttachments]
+      }
+    }));
+
+    newAttachments.forEach(att => {
+      addChangeLogEntry({
+        changeType: "CLOSURE_UPDATE",
+        description: `Adjunto '${att.descripcion}' agregado a cierre/despacho.`,
+        details: { tab: "despacho", action: "ADD_ATTACHMENT", fileName: att.descripcion }
+      });
+    });
+  };
+
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Cierre</h3>
+      <h3 className="text-lg font-medium mb-4">Cierre y Despacho</h3> {/* Title updated */}
       
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Guía de Despacho</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Información de Despacho</label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Número de Guía</label>
             <input 
               type="text" 
-              value={workOrder.cierre?.guia || ''}
-              onChange={(e) => setWorkOrder(prev => ({
-                ...prev,
-                cierre: {
-                  ...prev.cierre,
-                  guia: e.target.value
-                }
-              }))}
+              value={workOrder.despacho?.guiaDespacho || ''}
+              onChange={(e) => handleInputChange('guiaDespacho', e.target.value)}
               className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
           </div>
@@ -1382,31 +1906,52 @@ const ClosureTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
             <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Envío</label>
             <input 
               type="date" 
-              value={workOrder.cierre?.fechaEnvio || ''}
-              onChange={(e) => setWorkOrder(prev => ({
-                ...prev,
-                cierre: {
-                  ...prev.cierre,
-                  fechaEnvio: e.target.value
-                }
-              }))}
+              value={workOrder.despacho?.fechaDespacho || ''}
+              onChange={(e) => handleInputChange('fechaDespacho', e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Despachado Por</label>
+            <input
+              type="text"
+              value={workOrder.despacho?.despachadoPor || ''}
+              onChange={(e) => handleInputChange('despachadoPor', e.target.value)}
+              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+            />
+          </div>
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Comentarios de Despacho</label>
+            <textarea
+              rows={3}
+              value={workOrder.despacho?.comentarios || ''}
+              onChange={(e) => handleInputChange('comentarios', e.target.value)}
+              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
             />
           </div>
         </div>
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Adjuntos</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Adjuntos de Cierre</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(workOrder.cierre?.adjuntos || []).map((adjunto, index) => (
+          {(workOrder.despacho?.adjuntos || []).map((adjunto, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-2">
-              <img 
-                src={adjunto.preview} 
-                alt={`Adjunto ${index + 1}`} 
-                className="w-full h-32 object-cover rounded-lg border border-gray-200"
-              />
-              <p className="mt-2 text-xs text-center truncate">{adjunto.nombre}</p>
+              {/* Basic preview for images, link for others */}
+              {adjunto.url.startsWith('blob:') && (adjunto.descripcion?.match(/\.(jpeg|jpg|gif|png)$/) != null) ? (
+                 <img
+                  src={adjunto.url}
+                  alt={adjunto.descripcion || `Adjunto ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                />
+              ) : (
+                <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded-lg border border-gray-200">
+                  <a href={adjunto.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-800 text-sm p-2">
+                    Ver Archivo
+                  </a>
+                </div>
+              )}
+              <p className="mt-2 text-xs text-center truncate" title={adjunto.descripcion}>{adjunto.descripcion}</p>
             </div>
           ))}
         </div>
@@ -1415,23 +1960,7 @@ const ClosureTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
             type="file" 
             accept="*" 
             multiple
-            onChange={(e) => {
-              if (e.target.files) {
-                const files = Array.from(e.target.files);
-                const newAttachments = files.map(file => ({
-                  nombre: file.name,
-                  preview: URL.createObjectURL(file)
-                }));
-
-                setWorkOrder(prev => ({
-                  ...prev,
-                  cierre: {
-                    ...prev.cierre,
-                    adjuntos: [...(prev.cierre?.adjuntos || []), ...newAttachments]
-                  }
-                }));
-              }
-            }}
+            onChange={(e) => handleAddAttachment(e.target.files)}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
           />
         </div>
