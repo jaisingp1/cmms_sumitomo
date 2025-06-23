@@ -1,17 +1,55 @@
 // src/data/dropdownData.ts
 
 export const otStatusOptions: string[] = [
-  "Creación",
-  "Recepción de equipo",
-  "Revisión inicial",
+  "Creada",
+  "Equipo Recepcionado",
+  "Inspección Visual Realizada",
+  "Equipo Limpio",
+  "Equipo Desarmado",
+  "Diagnóstico de Piezas Realizado",
   "Presupuesto Enviado",
-  "Aprobado",
-  "En Reparación",
-  "Reparado",
-  "Enviado al Cliente",
-  "Finalizada",
-  "Rechazado",
+  "Presupuesto Aprobado",
+  "Reparación en Progreso",
+  "Pruebas Dinámicas Realizadas",
+  "Aprobación de Calidad Realizada",
+  "Despachado",
+  "Cerrada",
+  "Rechazada",
 ];
+
+export const tipoProductoOptions: string[] = ["GB", "GM"];
+
+export const productoGBOptions: string[] = [
+  "Paramax",
+  "Hansen",
+  "Flender",
+  "Sew",
+  "Falk",
+  "Otro",
+];
+
+export const productoGMOptions: string[] = [
+  "Cyclo",
+  "BBB",
+  "HSM",
+  "Hyponic",
+  "Helical (HHB)",
+  "Otro",
+];
+
+export const orientacionOptions: string[] = ["Vertical", "Horizontal"];
+
+export const reduccionOptions: string[] = [
+  "Reducción simple",
+  "Doble reducción",
+  "Triple reducción",
+  "Cuadruple reducción",
+];
+
+export const tipoLimpiezaOptions: string[] = ["Limpieza General", "Lavado Profundo"];
+
+export const decisionPiezaOptions: string[] = ["Reemplazar", "Reparar", "Reutilizar"];
+
 
 export const motivoIngresoOptions: string[] = [
   "Diagnóstico",
@@ -57,135 +95,280 @@ export const recibidoPorOptions: string[] = [
 // Puedes agregar más listas según sea necesario
 // Por ejemplo, tipos de reparación, piezas comunes, etc.
 
-export interface OrdenTrabajo {
-  id: string; // OT-number
-  fechaCreacion: string;
-  fechaRecepcion?: string;
-  motivoIngreso: string;
-  cliente: string;
-  vendedor?: string;
-  numeroSerie?: string;
-  modelo?: string;
-  recibidoPor?: string;
-  fechaVentaCliente?: string;
-  estado: string;
-  // Campos para el historial y detalles
-  historial?: Array<{ fecha: string; evento: string; responsable: string; notas?: string }>;
-  fotos?: string[]; // URLs o paths de las imágenes
-  diagnosticoInicial?: string;
-  detallesRevision?: Array<{ pieza: string; descripcion: string; costoEstimado?: number; requiereReemplazo?: boolean }>;
-  presupuesto?: {
-    items: Array<{ descripcion: string; cantidad: number; precioUnitario: number; total: number }>;
-    subtotal: number;
-    impuestos: number;
-    totalGeneral: number;
-    aprobado?: boolean;
-    fechaAprobacion?: string;
-  };
-  repuestosUtilizados?: Array<{ repuesto: string; cantidad: number; costo: number }>;
-  resumenCostos?: {
-    manoDeObra: number;
-    repuestos: number;
-    otros: number;
-    total: number;
-  };
-  notasReparacion?: string;
+export interface HistorialEntry {
+  fecha: string;
+  evento: string;
+  responsable: string;
+  notas?: string;
 }
+
+export interface FotoEntry {
+  url: string;
+  descripcion?: string;
+  fecha: string;
+  subidoPor: string;
+}
+
+export interface PiezaDetalle {
+  nombre: string;
+  foto?: FotoEntry;
+  mediciones?: string; // Podría ser un objeto más complejo si es necesario
+  ensayosNoDestructivos?: string; // Ídem
+  decision: string; // Reemplazar, Reparar, Reutilizar
+  comentarios?: string;
+}
+
+export interface PresupuestoItem {
+  descripcion: string;
+  cantidad: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
+export interface OrdenTrabajo {
+  id: string; // OT-number (ej: OT-YYYYMMDD-HHMM)
+  // Información general y de creación
+  fechaCreacion: string; // ISO date string
+  creadoPor: string; // Usuario que crea la OT
+  fechaPosibleRecepcion?: string; // ISO date string
+  numeroSerie?: string; // Si no existe, se cargan los campos manualmente
+  tipoProducto?: string; // GB, GM
+  producto?: string; // Paramax, Cyclo, Otro (con campo adicional)
+  productoOtro?: string; // Si producto es "Otro"
+  orientacion?: string; // Vertical, Horizontal
+  reduccion?: string; // Simple, Doble, etc.
+  cliente: string; // Nombre del cliente
+  estado: string; // Estado actual de la OT
+  fotoPlaca?: FotoEntry; // Foto de la placa del equipo
+  adjuntos?: FotoEntry[]; // Adjuntos generales a la OT
+
+  // Pestaña/Sección: Recepción en Bodega
+  fechaRecepcionBodega?: string; // ISO date string
+  recepcionadoPor?: string; // Usuario que recepciona
+
+  // Pestaña/Sección: Inspección Visual
+  inspeccionVisual?: {
+    fotos?: FotoEntry[];
+    comentarios?: string;
+    fecha: string;
+    realizadoPor: string;
+  };
+
+  // Pestaña/Sección: Limpieza de Equipo
+  limpiezaEquipo?: {
+    tipoLavado?: string; // Limpieza general, Lavado profundo
+    fechaRealizacion?: string; // ISO date string
+    internoOProveedor?: "Interno" | "Proveedor";
+    proveedor?: string; // Si es Proveedor
+    realizadoPor: string;
+  };
+
+  // Pestaña/Sección: Desarme
+  desarme?: {
+    fecha: string;
+    realizadoPor: string;
+    comentarios?: string; // Ej: "Limpieza de todas las piezas realizada"
+    piezasIdentificadas?: string[]; // Nombres de las piezas principales
+  };
+
+  // Pestaña/Sección: Diagnóstico de Piezas
+  diagnosticoPiezas?: {
+    piezas: PiezaDetalle[];
+    fecha: string;
+    realizadoPor: string;
+    comentariosGenerales?: string;
+  };
+
+  // Pestaña/Sección: Presupuesto
+  presupuesto?: {
+    items: PresupuestoItem[];
+    valorTotal: number;
+    fechaCreacion: string;
+    creadoPor: string;
+    fechaEnvio?: string; // Fecha en que se envía al cliente
+    aprobadoPorCliente?: boolean;
+    fechaAprobacionCliente?: string; // ISO date string
+    aprobadoPor?: string; // Quién aprueba internamente o registra aprobación cliente
+    comentarios?: string;
+  };
+
+  // Pestaña/Sección: Reparación
+  reparacion?: {
+    piezasAdicionales?: Array<{ nombre: string; cantidad: number; motivo: string }>;
+    fechaInicio?: string; // ISO date string
+    fechaFin?: string; // ISO date string
+    realizadoPor: string;
+    comentarios?: string;
+  };
+
+  // Pestaña/Sección: Pruebas Dinámicas
+  pruebasDinamicas?: {
+    tipoPrueba?: string;
+    resultados?: string;
+    fecha: string;
+    realizadoPor: string;
+    comentarios?: string;
+  };
+
+  // Pestaña/Sección: Aprobación de Calidad
+  aprobacionCalidad?: {
+    aprobado: boolean;
+    fecha: string; // ISO date string
+    aprobadoPor: string; // Firma electrónica o nombre del validador
+    comentarios?: string;
+  };
+
+  // Pestaña/Sección: Despacho
+  despacho?: {
+    guiaDespacho?: string; // Número o URL al archivo
+    fechaDespacho?: string; // ISO date string
+    despachadoPor?: string;
+    comentarios?: string;
+  };
+
+  // Historial de cambios de estado y acciones importantes
+  historial: HistorialEntry[];
+}
+
 // Datos simulados para la tabla
 export const mockOrdenesTrabajo: OrdenTrabajo[] = [
   {
-    id: "OT-2024001",
-    fechaCreacion: "2024-07-01",
-    fechaRecepcion: "2024-07-02",
-    motivoIngreso: motivoIngresoOptions[0], // Diagnóstico
+    id: "OT-20240715-1030",
+    fechaCreacion: new Date().toISOString(),
+    creadoPor: "UsuarioSistema",
+    fechaPosibleRecepcion: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días desde ahora
+    numeroSerie: "111",
+    tipoProducto: tipoProductoOptions[0], // GB
+    producto: productoGBOptions[0], // Paramax
+    orientacion: orientacionOptions[1], // Horizontal
+    reduccion: reduccionOptions[1], // Doble reducción
     cliente: clienteOptions[0], // Cliente A
-    vendedor: vendedorOptions[0], // Ana Gómez
-    numeroSerie: "SN12345XYZ",
-    modelo: modeloEquipoOptions[0], // Laptop HP EliteBook 840 G5
-    recibidoPor: recibidoPorOptions[0], // David Ríos (Bodega)
-    fechaVentaCliente: "2023-01-15",
-    estado: otStatusOptions[1], // Recepción de equipo
+    estado: otStatusOptions[0], // Creada
     historial: [
-      { fecha: "2024-07-01", evento: "OT Creada", responsable: "Admin" },
-      { fecha: "2024-07-02", evento: "Equipo Recibido en Bodega", responsable: "David Ríos", notas: "Se tomó foto de la placa." },
+      { fecha: new Date().toISOString(), evento: "OT Creada", responsable: "UsuarioSistema" },
     ],
-    fotos: ["/path/to/placa1.jpg"],
-    diagnosticoInicial: "El equipo no enciende.",
+    adjuntos: [
+      { url: "/path/to/doc_inicial.pdf", descripcion: "Solicitud Cliente", fecha: new Date().toISOString(), subidoPor: "UsuarioSistema" }
+    ]
   },
   {
-    id: "OT-2024002",
-    fechaCreacion: "2024-07-03",
-    motivoIngreso: motivoIngresoOptions[1], // Reparación
+    id: "OT-20240716-1100",
+    fechaCreacion: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // Ayer
+    creadoPor: "Ana Gómez",
+    fechaPosibleRecepcion: new Date().toISOString(),
+    numeroSerie: "222",
+    tipoProducto: tipoProductoOptions[1], // GM
+    producto: productoGMOptions[0], // Cyclo
+    orientacion: orientacionOptions[0], // Vertical
+    reduccion: reduccionOptions[0], // Reducción simple
     cliente: clienteOptions[1], // Empresa XYZ
-    vendedor: vendedorOptions[1], // Carlos Rodríguez
-    estado: otStatusOptions[0], // Creación
-    // Faltan más datos porque está recién creada
+    estado: otStatusOptions[1], // Equipo Recepcionado
+    fechaRecepcionBodega: new Date().toISOString(),
+    recepcionadoPor: "David Ríos (Bodega)",
+    fotoPlaca: { url: "/path/to/placa_222.jpg", descripcion: "Placa equipo SN 222", fecha: new Date().toISOString(), subidoPor: "David Ríos (Bodega)"},
+    historial: [
+      { fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), evento: "OT Creada", responsable: "Ana Gómez" },
+      { fecha: new Date().toISOString(), evento: "Equipo Recepcionado en Bodega", responsable: "David Ríos (Bodega)", notas: "Se tomó foto de la placa." },
+    ],
   },
   {
-    id: "OT-2024003",
-    fechaCreacion: "2024-06-28",
-    fechaRecepcion: "2024-06-29",
-    motivoIngreso: motivoIngresoOptions[2], // Mantenimiento Preventivo
+    id: "OT-20240717-0915",
+    fechaCreacion: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // Hace 2 días
+    creadoPor: "Carlos Rodríguez",
+    numeroSerie: "333", // Producto Otro
+    tipoProducto: tipoProductoOptions[0], // GB
+    producto: "Otro",
+    productoOtro: "Reductor especial marca Patito",
+    orientacion: orientacionOptions[1], // Horizontal
+    reduccion: reduccionOptions[2], // Triple reducción
     cliente: clienteOptions[2], // Juan Pérez
-    numeroSerie: "SN98765ABC",
-    modelo: modeloEquipoOptions[1], // Desktop Dell OptiPlex 7070
-    recibidoPor: recibidoPorOptions[1], // Elena Sánchez (Recepción)
-    estado: otStatusOptions[2], // Revisión inicial
+    estado: otStatusOptions[2], // Inspección Visual Realizada
+    fechaRecepcionBodega: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    recepcionadoPor: "Elena Sánchez (Recepción)",
+    fotoPlaca: { url: "/path/to/placa_333.jpg", descripcion: "Placa equipo SN 333", fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), subidoPor: "Elena Sánchez (Recepción)"},
+    inspeccionVisual: {
+      fotos: [
+        { url: "/path/to/inspeccion1_333.jpg", descripcion: "Vista general", fecha: new Date().toISOString(), subidoPor: "TecnicoMecanico"},
+        { url: "/path/to/inspeccion2_333.jpg", descripcion: "Daño visible carcasa", fecha: new Date().toISOString(), subidoPor: "TecnicoMecanico"}
+      ],
+      comentarios: "Equipo con signos de sobrecarga, carcasa con fisura.",
+      fecha: new Date().toISOString(),
+      realizadoPor: "TecnicoMecanico",
+    },
     historial: [
-        { fecha: "2024-06-28", evento: "OT Creada", responsable: "Vendedor: Sofía López" },
-        { fecha: "2024-06-29", evento: "Equipo Recibido", responsable: "Elena Sánchez" },
-        { fecha: "2024-06-30", evento: "Revisión Inicial Completada", responsable: "Técnico: Miguel Castro", notas: "Limpieza interna realizada, ventiladores OK." },
-    ],
-    fotos: ["/path/to/equipo_antes.jpg", "/path/to/equipo_despues.jpg"],
-    diagnosticoInicial: "Mantenimiento preventivo programado.",
-    detallesRevision: [
-        { pieza: "Ventilador CPU", descripcion: "Funciona correctamente, un poco de polvo.", requiereReemplazo: false },
-        { pieza: "Disco Duro", descripcion: "Estado SMART OK.", requiereReemplazo: false },
-        { pieza: "Memoria RAM", descripcion: "Tests pasados sin errores.", requiereReemplazo: false },
+      { fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), evento: "OT Creada", responsable: "Carlos Rodríguez" },
+      { fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), evento: "Equipo Recepcionado", responsable: "Elena Sánchez" },
+      { fecha: new Date().toISOString(), evento: "Inspección Visual Completada", responsable: "TecnicoMecanico" },
     ],
   },
   {
-    id: "OT-2024004",
-    fechaCreacion: "2024-07-05",
-    fechaRecepcion: "2024-07-06",
-    motivoIngreso: motivoIngresoOptions[0], // Diagnóstico
+    id: "OT-20240718-1400",
+    fechaCreacion: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    creadoPor: "Sofía López",
+    numeroSerie: "444",
+    tipoProducto: tipoProductoOptions[1], // GM
+    producto: productoGMOptions[1], // BBB
+    orientacion: orientacionOptions[0], // Vertical
+    reduccion: reduccionOptions[3], // Cuadruple reducción
     cliente: clienteOptions[3], // Servicios TI Ltda.
-    vendedor: vendedorOptions[0], // Ana Gómez
-    numeroSerie: "SNABC123",
-    modelo: modeloEquipoOptions[2], // Servidor Lenovo ThinkSystem SR650
-    recibidoPor: recibidoPorOptions[0], // David Ríos (Bodega)
-    estado: otStatusOptions[4], // Aprobado
-    historial: [
-        { fecha: "2024-07-05", evento: "OT Creada", responsable: "Vendedor: Ana Gómez" },
-        { fecha: "2024-07-06", evento: "Equipo Recibido", responsable: "David Ríos" },
-        { fecha: "2024-07-07", evento: "Diagnóstico Realizado", responsable: "Técnico: Laura Pausini", notas: "Falla en fuente de poder." },
-        { fecha: "2024-07-08", evento: "Presupuesto Enviado", responsable: "Ana Gómez" },
-        { fecha: "2024-07-09", evento: "Presupuesto Aprobado por Cliente", responsable: "Cliente: Servicios TI Ltda." },
-    ],
+    estado: otStatusOptions[6], // Presupuesto Enviado
+    // ... (datos de etapas anteriores poblados)
+    fechaRecepcionBodega: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    recepcionadoPor: "David Ríos (Bodega)",
+    fotoPlaca: { url: "/path/to/placa_444.jpg", descripcion: "Placa equipo SN 444", fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), subidoPor: "David Ríos (Bodega)"},
+    inspeccionVisual: {realizadoPor: "TM1", fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), comentarios: "Ok"},
+    limpiezaEquipo: {tipoLavado: tipoLimpiezaOptions[0], fechaRealizacion: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), internoOProveedor: "Interno", realizadoPor: "AuxLimpieza"},
+    desarme: {fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), realizadoPor: "TM2", piezasIdentificadas: ["Eje Principal", "Rodamiento A", "Rodamiento B", "Carcasa"]},
+    diagnosticoPiezas: {
+      piezas: [
+        { nombre: "Eje Principal", decision: decisionPiezaOptions[2], comentarios: "Desgaste leve, reutilizable" },
+        { nombre: "Rodamiento A", decision: decisionPiezaOptions[0], foto: {url: "/path/to/rodA.jpg", subidoPor: "TM2", fecha:new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()}, mediciones: "Holgura excesiva", ensayosNoDestructivos: "N/A", comentarios: "Requiere reemplazo urgente."},
+        { nombre: "Rodamiento B", decision: decisionPiezaOptions[0], comentarios: "Dañado, necesita reemplazo."},
+        { nombre: "Carcasa", decision: decisionPiezaOptions[1], comentarios: "Fisura reparable con soldadura especial."}
+      ],
+      fecha: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // Hace 12 horas
+      realizadoPor: "TM2",
+    },
     presupuesto: {
-        items: [{ descripcion: "Reemplazo Fuente de Poder ATX 750W", cantidad: 1, precioUnitario: 120, total: 120 }],
-        subtotal: 120,
-        impuestos: 22.8, // Asumiendo 19% IVA
-        totalGeneral: 142.8,
-        aprobado: true,
-        fechaAprobacion: "2024-07-09",
-    }
-  },
-  {
-    id: "OT-2024005",
-    fechaCreacion: "2024-07-10",
-    motivoIngreso: motivoIngresoOptions[3], // Garantía
-    cliente: clienteOptions[4], // Global Solutions S.A.
-    vendedor: vendedorOptions[2], // Sofía López
-    numeroSerie: "SNDEF456",
-    modelo: modeloEquipoOptions[3], // Impresora Epson EcoTank L3250
-    fechaVentaCliente: "2024-03-01",
-    estado: otStatusOptions[5], // En Reparación
+      items: [
+        { descripcion: "Rodamiento A (SKF 6205)", cantidad: 1, valorUnitario: 50, valorTotal: 50 },
+        { descripcion: "Rodamiento B (SKF 6304)", cantidad: 1, valorUnitario: 65, valorTotal: 65 },
+        { descripcion: "Reparación Carcasa (Soldadura)", cantidad: 1, valorUnitario: 120, valorTotal: 120 },
+        { descripcion: "Mano de Obra Desarme y Diagnóstico", cantidad: 4, valorUnitario: 30, valorTotal: 120 },
+        { descripcion: "Mano de Obra Reparación y Armado", cantidad: 6, valorUnitario: 35, valorTotal: 210 },
+      ],
+      valorTotal: 565,
+      fechaCreacion: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // Hace 6 horas
+      creadoPor: "Ana Gómez",
+      fechaEnvio: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // Hace 1 hora
+    },
     historial: [
-        { fecha: "2024-07-10", evento: "OT Creada por Garantía", responsable: "Vendedor: Sofía López" },
-        { fecha: "2024-07-11", evento: "Equipo Recibido", responsable: "Elena Sánchez" },
-        { fecha: "2024-07-12", evento: "Inicio de Reparación", responsable: "Técnico: Ricardo Arjona", notes: "Revisando cabezales de impresión." },
+        { fecha: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), evento: "OT Creada", responsable: "Sofía López" },
+        { fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), evento: "Equipo Recepcionado", responsable: "David Ríos" },
+        { fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), evento: "Inspección Visual", responsable: "TM1" },
+        { fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), evento: "Limpieza Equipo", responsable: "AuxLimpieza" },
+        { fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), evento: "Desarme Equipo", responsable: "TM2" },
+        { fecha: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), evento: "Diagnóstico Piezas", responsable: "TM2" },
+        { fecha: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), evento: "Presupuesto Creado", responsable: "Ana Gómez" },
+        { fecha: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), evento: "Presupuesto Enviado a Cliente", responsable: "Ana Gómez" },
     ],
-    notasReparacion: "Se están limpiando los inyectores del cabezal de impresión obstruidos."
+  },
+  // Ejemplo de OT sin número de serie (carga manual)
+  {
+    id: "OT-20240719-1500",
+    fechaCreacion: new Date().toISOString(),
+    creadoPor: "UsuarioMostrador",
+    cliente: clienteOptions[4], // Global Solutions S.A.
+    estado: otStatusOptions[0], // Creada
+    // numeroSerie es undefined
+    tipoProducto: tipoProductoOptions[0], // GB
+    producto: productoGBOptions[1], // Hansen
+    productoOtro: undefined,
+    orientacion: orientacionOptions[0], // Vertical
+    reduccion: reduccionOptions[0], // Reducción simple
+    fechaPosibleRecepcion: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    historial: [
+      { fecha: new Date().toISOString(), evento: "OT Creada (sin N/S, manual)", responsable: "UsuarioMostrador" },
+    ],
   }
 ];

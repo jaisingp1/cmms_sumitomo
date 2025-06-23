@@ -1,5 +1,6 @@
 // src/pages/HomePage.tsx
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import {
   otStatusOptions,
   motivoIngresoOptions,
@@ -15,6 +16,7 @@ import {
 type OrdenTrabajoKeys = keyof OrdenTrabajo;
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate(); // Initialize useNavigate
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
 
@@ -84,10 +86,7 @@ const HomePage: React.FC = () => {
   }, [searchTerm, filters]);
 
   const handleOtClick = (ot: OrdenTrabajo) => {
-    // For now, just log. Later, this would navigate to a detail page.
-    console.log("Clicked OT:", ot);
-    alert(`OT Seleccionada: ${ot.id}\nEstado: ${ot.estado}\nCliente: ${ot.cliente}\n\nVer consola para más detalles del objeto completo.`);
-    // Example: navigate(`/ots/${ot.id}`);
+    navigate(`/ot/${ot.id}`); // Navigate to OT detail page
   };
 
   const renderFilterDropdown = (field: OrdenTrabajoKeys, options: string[], label: string) => (
