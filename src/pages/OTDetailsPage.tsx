@@ -39,6 +39,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
         estado: "Creación", // Estado inicial
+
         // Initialize other fields as needed, e.g., with empty strings or default values
         motivoIngreso: '',
         cliente: '',
@@ -67,7 +68,9 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
           changeType: "OT_CREATION",
           description: `Nueva Orden de Trabajo ${newOtId} creada.`,
           details: { otId: newOtId }
-        }]
+        }],
+        creadoPor: '',
+        historial: []
       };
       return newWorkOrder;
     } else if (initialOt) {
