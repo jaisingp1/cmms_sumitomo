@@ -6,7 +6,7 @@ import {
   modeloEquipoOptions, 
   recibidoPorOptions,
   mockOrdenesTrabajo
-} from './data/dropdownData';
+} from '../data/dropdownData';
 
 const WorkOrderForm = () => {
   // State for the current work order
@@ -354,7 +354,7 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios</label>
         <textarea 
-          rows="4"
+          rows={4}
           value={workOrder.diagnosticoInicial || ''}
           onChange={(e) => setWorkOrder(prev => ({ ...prev, diagnosticoInicial: e.target.value }))}
           className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -378,13 +378,17 @@ const InspectionTab = ({ workOrder, setWorkOrder }) => {
             type="file" 
             accept="image/*" 
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  handleAddPhoto(e.target.result);
-                };
-                reader.readAsDataURL(file);
+              if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (loadEvent) => {
+                    if (loadEvent.target) {
+                      handleAddPhoto(loadEvent.target.result as string);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
@@ -460,7 +464,7 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
         <textarea 
-          rows="4"
+          rows={4}
           value={workOrder.limpieza?.notas || ''}
           onChange={(e) => setWorkOrder(prev => ({
             ...prev,
@@ -490,19 +494,23 @@ const CleaningTab = ({ workOrder, setWorkOrder }) => {
             type="file" 
             accept="image/*" 
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  setWorkOrder(prev => ({
-                    ...prev,
-                    limpieza: {
-                      ...prev.limpieza,
-                      fotos: [...(prev.limpieza?.fotos || []), e.target.result]
+              if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (loadEvent) => {
+                    if (loadEvent.target) {
+                      setWorkOrder(prev => ({
+                        ...prev,
+                        limpieza: {
+                          ...prev.limpieza,
+                          fotos: [...(prev.limpieza?.fotos || []), loadEvent.target.result as string]
+                        }
+                      }));
                     }
-                  }));
-                };
-                reader.readAsDataURL(file);
+                  };
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
@@ -522,7 +530,7 @@ const DisassemblyTab = ({ workOrder, setWorkOrder }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Acción a Realizar</label>
         <textarea 
-          rows="4"
+          rows={4}
           value={workOrder.desarme?.accion || ''}
           onChange={(e) => setWorkOrder(prev => ({
             ...prev,
@@ -552,19 +560,23 @@ const DisassemblyTab = ({ workOrder, setWorkOrder }) => {
             type="file" 
             accept="image/*" 
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  setWorkOrder(prev => ({
-                    ...prev,
-                    desarme: {
-                      ...prev.desarme,
-                      fotos: [...(prev.desarme?.fotos || []), e.target.result]
+              if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (loadEvent) => {
+                    if (loadEvent.target) {
+                      setWorkOrder(prev => ({
+                        ...prev,
+                        desarme: {
+                          ...prev.desarme,
+                          fotos: [...(prev.desarme?.fotos || []), loadEvent.target.result as string]
+                        }
+                      }));
                     }
-                  }));
-                };
-                reader.readAsDataURL(file);
+                  };
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
@@ -600,8 +612,10 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
   
   const uploadPartPhoto = (index, file) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      updatePart(index, 'foto', e.target.result);
+    reader.onload = (loadEvent) => {
+      if (loadEvent.target) {
+        updatePart(index, 'foto', loadEvent.target.result as string);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -641,7 +655,11 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
                 <input 
                   type="file" 
                   accept="image/*" 
-                  onChange={(e) => uploadPartPhoto(index, e.target.files[0])}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      uploadPartPhoto(index, e.target.files[0]);
+                    }
+                  }}
                   className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mt-2"
                 />
               </div>
@@ -649,7 +667,7 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Mediciones Tomadas</label>
                 <textarea 
-                  rows="3"
+                  rows={3}
                   value={part.mediciones}
                   onChange={(e) => updatePart(index, 'mediciones', e.target.value)}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -659,7 +677,7 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Ensayos No Destructivos Realizados</label>
                 <textarea 
-                  rows="3"
+                  rows={3}
                   value={part.ensayos}
                   onChange={(e) => updatePart(index, 'ensayos', e.target.value)}
                   className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
@@ -790,7 +808,12 @@ const BudgetTab = ({ workOrder, setWorkOrder }) => {
                     type="number" 
                     min="1"
                     value={item.cantidad}
-                    onChange={(e) => updateItem(index, 'cantidad', parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (!isNaN(value)) {
+                        updateItem(index, 'cantidad', value);
+                      }
+                    }}
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </td>
@@ -799,7 +822,12 @@ const BudgetTab = ({ workOrder, setWorkOrder }) => {
                     type="number" 
                     min="0"
                     value={item.precioUnitario}
-                    onChange={(e) => updateItem(index, 'precioUnitario', parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value)) {
+                        updateItem(index, 'precioUnitario', value);
+                      }
+                    }}
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
                 </td>
@@ -970,7 +998,12 @@ const RepairTab = ({ workOrder, setWorkOrder }) => {
                       type="number" 
                       min="0"
                       value={part.costo}
-                      onChange={(e) => updateAdditionalPart(index, 'costo', parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (!isNaN(value)) {
+                        updateAdditionalPart(index, 'cantidad', value);
+                      }
+                    }}
                       className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
                   </td>
@@ -1038,7 +1071,7 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">Resultados</label>
         <textarea 
-          rows="6"
+          rows={6}
           value={workOrder.pruebas?.resultados || ''}
           onChange={(e) => setWorkOrder(prev => ({
             ...prev,
@@ -1068,19 +1101,23 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
             type="file" 
             accept="image/*" 
             onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  setWorkOrder(prev => ({
-                    ...prev,
-                    pruebas: {
-                      ...prev.pruebas,
-                      fotos: [...(prev.pruebas?.fotos || []), e.target.result]
+              if (e.target.files && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (loadEvent) => {
+                    if (loadEvent.target) {
+                      setWorkOrder(prev => ({
+                        ...prev,
+                        pruebas: {
+                          ...prev.pruebas,
+                          fotos: [...(prev.pruebas?.fotos || []), loadEvent.target.result as string]
+                        }
+                      }));
                     }
-                  }));
-                };
-                reader.readAsDataURL(file);
+                  };
+                  reader.readAsDataURL(file);
+                }
               }
             }}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
@@ -1093,7 +1130,7 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
 
 // Quality Tab
 const QualityTab = ({ workOrder, setWorkOrder }) => {
-  const [signature, setSignature] = useState(null);
+  const [signature, setSignature] = useState<string | null>(null);
   
   const handleSignatureChange = (e) => {
     setSignature("Firma digital capturada");
@@ -1244,19 +1281,21 @@ const ClosureTab = ({ workOrder, setWorkOrder }) => {
             accept="*" 
             multiple
             onChange={(e) => {
-              const files = Array.from(e.target.files);
-              const newAttachments = files.map(file => ({
-                nombre: file.name,
-                preview: URL.createObjectURL(file)
-              }));
-              
-              setWorkOrder(prev => ({
-                ...prev,
-                cierre: {
-                  ...prev.cierre,
-                  adjuntos: [...(prev.cierre?.adjuntos || []), ...newAttachments]
-                }
-              }));
+              if (e.target.files) {
+                const files = Array.from(e.target.files);
+                const newAttachments = files.map(file => ({
+                  nombre: file.name,
+                  preview: URL.createObjectURL(file)
+                }));
+
+                setWorkOrder(prev => ({
+                  ...prev,
+                  cierre: {
+                    ...prev.cierre,
+                    adjuntos: [...(prev.cierre?.adjuntos || []), ...newAttachments]
+                  }
+                }));
+              }
             }}
             className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
           />
@@ -1343,7 +1382,7 @@ const HistoryPanel = ({ history, onHistoryChange }) => {
             <div className="mt-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
               <textarea 
-                rows="2"
+                rows={2}
                 value={item.notas || ''}
                 onChange={(e) => updateHistoryItem(index, 'notas', e.target.value)}
                 className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
