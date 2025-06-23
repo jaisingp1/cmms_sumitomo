@@ -9,7 +9,7 @@ import './App.css'; // Mantener si hay estilos globales aquí
 
 // Wrapper component to fetch OT data and pass it to OTDetailsPage
 const OTDetailsWrapper = () => {
-  const { otId } = useParams<{ otId: string }>();
+  const { otId } = useParams(); // Removed TypeScript generic here
   const ordenTrabajo = mockOrdenesTrabajo.find(ot => ot.id === otId);
 
   if (!ordenTrabajo) {
