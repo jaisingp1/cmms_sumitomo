@@ -5,38 +5,18 @@ import {
   vendedorOptions, 
   modeloEquipoOptions, 
   recibidoPorOptions,
-  mockOrdenesTrabajo
+  mockOrdenesTrabajo,
+  ChangeHistoryEntry, // Import from dropdownData
+  ChangeType, // Import from dropdownData (removed duplicate)
+  OrdenTrabajo // Import OrdenTrabajo to use in TabComponentProps
 } from '../data/dropdownData';
 
-// Define types for Change History
-interface ChangeHistoryEntry {
-  id: string;
-  timestamp: string;
-  user: string; // Placeholder for now
-  changeType: ChangeType;
-  description: string;
-  details?: Record<string, any>;
+// Define common props for Tab components
+interface TabComponentProps {
+  workOrder: OrdenTrabajo; // Use the imported OrdenTrabajo type
+  setWorkOrder: React.Dispatch<React.SetStateAction<OrdenTrabajo>>;
+  addChangeLogEntry: (entryData: Omit<ChangeHistoryEntry, 'id' | 'timestamp' | 'user'>) => void;
 }
-
-type ChangeType =
-  | "OT_CREATION"
-  | "STATUS_UPDATE"
-  | "HEADER_FIELD_UPDATE"
-  | "INSPECTION_UPDATE"
-  | "CLEANING_UPDATE"
-  | "DISASSEMBLY_UPDATE"
-  | "PARTS_UPDATE"
-  | "BUDGET_ITEM_ADD"
-  | "BUDGET_ITEM_REMOVE"
-  | "BUDGET_ITEM_UPDATE"
-  | "BUDGET_APPROVAL"
-  | "REPAIR_NOTES_UPDATE"
-  | "ADDITIONAL_PART_ADD"
-  | "ADDITIONAL_PART_REMOVE"
-  | "ADDITIONAL_PART_UPDATE"
-  | "TESTING_UPDATE"
-  | "QUALITY_APPROVAL"
-  | "CLOSURE_UPDATE";
 
 // Helper to generate unique IDs
 const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
@@ -428,7 +408,7 @@ const isTabEnabled = (tabName: string, currentStatus: string) => {
 };
 
 // Inspection Tab
-const InspectionTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
   const handleCommentsChange = (newComments: string) => {
     setWorkOrder(prev => ({ ...prev, diagnosticoInicial: newComments }));
   };
@@ -511,7 +491,7 @@ const InspectionTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
 };
 
 // Cleaning Tab
-const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
   const handleFieldChange = (field: string, value: any) => {
     const oldValue = workOrder.limpieza?.[field] || "";
     if (value !== oldValue) {
@@ -663,7 +643,9 @@ const CleaningTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
 };
 
 // Disassembly Tab
-const DisassemblyTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for this tab's fields (accion, fotos)
+  // using addChangeLogEntry, similar to InspectionTab and CleaningTab.
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Desarme</h3>
@@ -729,7 +711,9 @@ const DisassemblyTab = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
 };
 
 // Parts Tab
-const PartsTab = ({ workOrder, setWorkOrder }) => {
+const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for addPart, updatePart, removePart, uploadPartPhoto
+  // using addChangeLogEntry.
   const addPart = () => {
     setWorkOrder(prev => ({
       ...prev,
@@ -754,7 +738,7 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
   const uploadPartPhoto = (index, file) => {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
-      if (loadEvent.target && loadEvent.target.result) {
+      if (loadEvent.target && loadEvent.target.result) { // Ensure target and result exist
         updatePart(index, 'foto', loadEvent.target.result as string);
       }
     };
@@ -855,7 +839,9 @@ const PartsTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Budget Tab
-const BudgetTab = ({ workOrder, setWorkOrder }) => {
+const BudgetTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for addItem, updateItem, removeItem, and checkbox approval
+  // using addChangeLogEntry.
   const addItem = () => {
     setWorkOrder(prev => ({
       ...prev,
@@ -1072,7 +1058,9 @@ const BudgetTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Repair Tab
-const RepairTab = ({ workOrder, setWorkOrder }) => {
+const RepairTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for addAdditionalPart, updateAdditionalPart, removeAdditionalPart, and notasReparacion
+  // using addChangeLogEntry.
   const addAdditionalPart = () => {
     setWorkOrder(prev => ({
       ...prev,
@@ -1188,7 +1176,9 @@ const RepairTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Testing Tab
-const TestingTab = ({ workOrder, setWorkOrder }) => {
+const TestingTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for tipoPrueba, resultados, and fotos
+  // using addChangeLogEntry.
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Pruebas Dinámicas</h3>
@@ -1247,7 +1237,7 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = (loadEvent) => {
-                    if (loadEvent.target && loadEvent.target.result) {
+                    if (loadEvent.target && loadEvent.target.result) { // Ensure target and result exist
                       setWorkOrder(prev => ({
                         ...prev,
                         pruebas: {
@@ -1270,7 +1260,9 @@ const TestingTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Quality Tab
-const QualityTab = ({ workOrder, setWorkOrder }) => {
+const QualityTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for 'validado' checkbox and signature capture
+  // using addChangeLogEntry.
   const [signature, setSignature] = useState<string | null>(null);
   
   const handleSignatureChange = (e) => {
@@ -1360,7 +1352,9 @@ const QualityTab = ({ workOrder, setWorkOrder }) => {
 };
 
 // Closure Tab
-const ClosureTab = ({ workOrder, setWorkOrder }) => {
+const ClosureTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addChangeLogEntry }) => {
+  // TODO: Implement change logging for guia, fechaEnvio, and adjuntos
+  // using addChangeLogEntry.
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">Cierre</h3>
