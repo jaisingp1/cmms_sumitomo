@@ -106,48 +106,22 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
     }
     // Fallback to a default mock OT if no data is provided (should ideally not happen with proper routing)
     // Or, better, throw an error or redirect if initialOt is expected but not provided and not isNew
-    } else {
-      // NO hay isNew y NO hay initialOt. Esto no debería pasar si la navegación es correcta.
-      console.error("ERROR: OTDetailsPage cargada sin 'isNew' ni 'initialOt'. Creando OT vacía de emergencia.");
-      const emergencyEmptyOtId = generateOtId();
-      const emptyWorkOrder: OrdenTrabajo = {
-        id: emergencyEmptyOtId,
-        fechaCreacion: new Date().toISOString().split('T')[0],
-        estado: "Error/Vacío",
-        motivoIngreso: '',
-        cliente: '',
-        vendedor: '',
-        numeroSerie: '',
-        modelo: '',
-        recibidoPor: '',
-        fechaVentaCliente: '',
-        fechaRecepcion: '',
-        tipoProducto: '',
-        producto: '',
-        productoOtro: '',
-        orientacion: '',
-        reduccion: '',
-        inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
-        limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, realizadoPor: '', comentarios: '', fotos: [] },
-        desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
-        diagnosticoPiezas: { piezas: [], fecha: '', realizadoPor: '' },
-        presupuesto: { items: [], valorTotal: 0, fechaCreacion: '', creadoPor: '', subtotal: 0, impuestos: 0, totalGeneral: 0 },
-        reparacion: { piezasAdicionales: [], comentarios: '', realizadoPor: '' },
-        pruebasDinamicas: { tipoPrueba: '', resultados: '', fotos: [], fecha: '', realizadoPor: '' },
-        aprobacionCalidad: { aprobado: false, firma: '', fecha: '', aprobadoPor: '' },
-        despacho: { guiaDespacho: '', fechaDespacho: '', despachadoPor: '', comentarios: '', adjuntos: [] },
-        historial: [], // Añadido para que no falte
-        changeLog: [{
-          id: generateUUID(),
-          timestamp: new Date().toISOString(),
-          user: "Sistema",
-          changeType: "OT_CREATION",
-          description: `OT de emergencia creada ${emergencyEmptyOtId}. Faltan datos.`,
-          details: { otId: emergencyEmptyOtId }
-        }]
-      };
-      return emptyWorkOrder;
     }
+    // Fallback to a default mock OT if no data is provided (should ideally not happen with proper routing)
+    // Or, better, throw an error or redirect if initialOt is expected but not provided and not isNew
+    console.warn("WorkOrderForm cargado sin OT inicial y no está en modo 'nuevo'. Usando mock data.");
+    const fallbackOt = mockOrdenesTrabajo[0]; // Consider removing this or handling it more gracefully
+    if (!fallbackOt.changeLog) {
+        fallbackOt.changeLog = [{
+            id: generateUUID(),
+            timestamp: new Date().toISOString(),
+            user: "Sistema",
+            changeType: "OT_CREATION",
+            description: `OT de respaldo ${fallbackOt.id} cargada (N/S: ${fallbackOt.numeroSerie || 'N/A'}).`,
+            details: { numeroSerie: fallbackOt.numeroSerie }
+        }];
+    }
+    return fallbackOt;
   });
   // State for active tab
   const [activeTab, setActiveTab] = useState('inspeccion');
