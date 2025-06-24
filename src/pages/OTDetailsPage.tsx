@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Asegurar que useNavigate esté importado
 import { 
   otStatusOptions, 
   clienteOptions, 
@@ -28,7 +29,7 @@ const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random
 const generateOtId = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
   const correlativo = "001"; // Simplificación por ahora
   return `OT${year}${month}${day}${correlativo}`;
@@ -51,7 +52,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
         creadoPor: "UsuarioActual", // Placeholder
-        estado: "Creada", 
+        estado: "Creada",
         motivoIngreso: '',
         cliente: '',
         vendedor: '',
@@ -59,7 +60,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         modelo: '',
         recibidoPor: '',
         fechaVentaCliente: '',
-        fechaRecepcion: '', 
+        fechaRecepcion: '',
         tipoProducto: '',
         producto: '',
         productoOtro: '',
@@ -91,8 +92,8 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         initialOt.changeLog = [{
           id: generateUUID(),
           timestamp: new Date().toISOString(),
-          user: "Sistema", 
-          changeType: "OT_CREATION", 
+          user: "Sistema",
+          changeType: "OT_CREATION",
           description: `Historial de cambios inicializado para OT ${initialOt.id} (N/S: ${initialOt.numeroSerie || 'N/A'}).`,
           details: { numeroSerie: initialOt.numeroSerie }
         }];
@@ -145,7 +146,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // State for active tab
   const [activeTab, setActiveTab] = useState('inspeccion');
   // No local serialNumber state here, workOrder.numeroSerie is the truth
-  const navigate = useNavigate(); // Para el botón "Volver a Home"
+  const navigate = useNavigate();
 
   // Function to add a new entry to the change log
   const addChangeLogEntry = (entryData: Omit<ChangeHistoryEntry, 'id' | 'timestamp' | 'user'>) => {
@@ -165,7 +166,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // Function to handle changes in the header form
   const handleHeaderChange = (field: string, value: any) => {
     const oldValue = workOrder[field];
-    if (oldValue !== value) { 
+    if (oldValue !== value) {
       const fieldNameMappings: Record<string, string> = {
         numeroSerie: "Número de Serie (Equipo)",
         tipoProducto: "Tipo de Producto",
@@ -221,7 +222,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
       });
 
       addChangeLogEntry({
-        changeType: "HEADER_FIELD_UPDATE", 
+        changeType: "HEADER_FIELD_UPDATE",
         description: `Campos autocompletados basados en N/S: ${trimmedNumeroSerie}.`,
         details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado por N/S" }
       });
@@ -297,7 +298,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
           <input
             type="text"
             value={workOrder.id || ''}
-            readOnly 
+            readOnly
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100"
           />
         </div>
