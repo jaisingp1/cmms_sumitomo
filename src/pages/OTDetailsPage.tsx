@@ -346,6 +346,12 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             value={workOrder.numeroSerie || ''}
             onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
             onBlur={(e) => onNumeroSerieBlur(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault(); // Prevenir submit de formulario si existiera
+                onNumeroSerieBlur((e.target as HTMLInputElement).value);
+              }
+            }}
             readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
