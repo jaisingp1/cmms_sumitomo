@@ -52,7 +52,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
         creadoPor: "UsuarioActual", // Placeholder
-        estado: "Creada",
+        estado: "Creada", // Default estado for new OT
         motivoIngreso: '',
         cliente: '',
         vendedor: '',
@@ -62,11 +62,14 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         fechaVentaCliente: '',
         fechaRecepcion: '',
         tipoProducto: '',
-        producto: '',
+        producto: '', // Corresponds to tipoGB or tipoGM based on tipoProducto
         productoOtro: '',
         orientacion: '',
         reduccion: '',
+        tipoGB: '', // Ensure these are initialized if you have specific fields for them
+        tipoGM: '', // Ensure these are initialized
         historial: [{ fecha: new Date().toISOString(), evento: "OT Creada", responsable: "UsuarioActual" }],
+        // Initialize all other sections to their empty/default states
         inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
         limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, realizadoPor: '', comentarios: '', fotos: [] },
         desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
@@ -200,32 +203,66 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
     const trimmedNumeroSerie = numeroSerieIngresado.trim();
     if (!trimmedNumeroSerie) return;
 
-    // console.log("Número de Serie Ingresado (trimmed):", trimmedNumeroSerie);
-    const otEncontrada = mockOrdenesTrabajo.find(ot => String(ot.numeroSerie).trim() === trimmedNumeroSerie);
-    // console.log("OT Encontrada:", otEncontrada);
-
-    if (otEncontrada) {
-      // console.log("Autocompletando con datos de OT Encontrada:", otEncontrada);
-      setWorkOrder(prevWorkOrder => {
-        const updates: Partial<OrdenTrabajo> = {};
-        if (otEncontrada.tipoProducto !== undefined) updates.tipoProducto = otEncontrada.tipoProducto;
-        if (otEncontrada.producto !== undefined) updates.producto = otEncontrada.producto;
-        if (otEncontrada.productoOtro !== undefined) updates.productoOtro = otEncontrada.productoOtro;
-        if (otEncontrada.orientacion !== undefined) updates.orientacion = otEncontrada.orientacion;
-        if (otEncontrada.reduccion !== undefined) updates.reduccion = otEncontrada.reduccion;
-        if (otEncontrada.cliente !== undefined) updates.cliente = otEncontrada.cliente;
-        if (otEncontrada.vendedor !== undefined) updates.vendedor = otEncontrada.vendedor;
-        if (otEncontrada.modelo !== undefined) updates.modelo = otEncontrada.modelo;
-        if (otEncontrada.fechaVentaCliente !== undefined) updates.fechaVentaCliente = otEncontrada.fechaVentaCliente;
-        // No actualizamos fechaRecepcion desde el autocompletado, ya que el usuario podría haberla puesto.
-        return { ...prevWorkOrder, ...updates };
-      });
-
+    if (trimmedNumeroSerie === "1234") {
+      // Ejemplo específico para el número de serie 1234
+      const exampleData: Partial<OrdenTrabajo> = {
+        tipoProducto: "GM", // Ejemplo
+        producto: "Cyclo", // Ejemplo, asegúrate que coincida con tipoProducto
+        reduccion: "doble", // Ejemplo
+        orientacion: "vertical", // Ejemplo
+        cliente: "Cliente Ejemplo SA", // Ejemplo
+        vendedor: "Vendedor Estrella", // Ejemplo
+        modelo: "Modelo XYZ-1234", // Ejemplo
+        fechaVentaCliente: "2024-01-10", // Ejemplo
+        // tipoGM: "Cyclo" // Si usas producto para el tipo específico (Cyclo, Paramax, etc.)
+      };
+      setWorkOrder(prevWorkOrder => ({
+        ...prevWorkOrder,
+        ...exampleData,
+        // Si 'producto' es el campo para 'Cyclo', 'Paramax', etc. y 'tipoGM'/'tipoGB' no son usados directamente en workOrder para esto:
+        tipoGM: exampleData.tipoProducto === "GM" ? exampleData.producto : prevWorkOrder.tipoGM,
+        tipoGB: exampleData.tipoProducto === "GB" ? exampleData.producto : prevWorkOrder.tipoGB,
+      }));
       addChangeLogEntry({
         changeType: "HEADER_FIELD_UPDATE",
-        description: `Campos autocompletados basados en N/S: ${trimmedNumeroSerie}.`,
-        details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado por N/S" }
+        description: `Campos autocompletados para N/S especial: ${trimmedNumeroSerie}.`,
+        details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado especial 1234" }
       });
+    } else {
+      // Lógica existente para otros números de serie
+      const otEncontrada = mockOrdenesTrabajo.find(ot => String(ot.numeroSerie).trim() === trimmedNumeroSerie);
+      if (otEncontrada) {
+        setWorkOrder(prevWorkOrder => {
+          const updates: Partial<OrdenTrabajo> = {};
+          if (otEncontrada.tipoProducto !== undefined) updates.tipoProducto = otEncontrada.tipoProducto;
+          // Asegurar que 'producto' se actualiza correctamente y, si es necesario, 'tipoGB'/'tipoGM'
+          if (otEncontrada.producto !== undefined) {
+            updates.producto = otEncontrada.producto;
+            if (otEncontrada.tipoProducto === "GB") {
+              updates.tipoGB = otEncontrada.producto;
+              updates.tipoGM = ''; // Limpiar el otro tipo
+            } else if (otEncontrada.tipoProducto === "GM") {
+              updates.tipoGM = otEncontrada.producto;
+              updates.tipoGB = ''; // Limpiar el otro tipo
+            }
+          }
+          if (otEncontrada.productoOtro !== undefined) updates.productoOtro = otEncontrada.productoOtro;
+          if (otEncontrada.orientacion !== undefined) updates.orientacion = otEncontrada.orientacion;
+          if (otEncontrada.reduccion !== undefined) updates.reduccion = otEncontrada.reduccion;
+          if (otEncontrada.cliente !== undefined) updates.cliente = otEncontrada.cliente;
+          if (otEncontrada.vendedor !== undefined) updates.vendedor = otEncontrada.vendedor;
+          if (otEncontrada.modelo !== undefined) updates.modelo = otEncontrada.modelo;
+          if (otEncontrada.fechaVentaCliente !== undefined) updates.fechaVentaCliente = otEncontrada.fechaVentaCliente;
+
+          return { ...prevWorkOrder, ...updates };
+        });
+
+        addChangeLogEntry({
+          changeType: "HEADER_FIELD_UPDATE",
+          description: `Campos autocompletados basados en N/S: ${trimmedNumeroSerie}.`,
+          details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado por N/S existente" }
+        });
+      }
     }
   };
   
@@ -332,7 +369,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GB</label>
             <select 
-              value={workOrder.tipoGB || ''}
+              value={workOrder.tipoGB || ''} // Use workOrder.tipoGB
               onChange={(e) => onHeaderChange('tipoGB', e.target.value)}
               disabled={!isEditing}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
@@ -352,7 +389,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GM</label>
             <select 
-              value={workOrder.tipoGM || ''}
+              value={workOrder.tipoGM || ''} // Use workOrder.tipoGM
               onChange={(e) => onHeaderChange('tipoGM', e.target.value)}
               disabled={!isEditing}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
@@ -399,17 +436,6 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
-          <input 
-            type="date" 
-            value={workOrder.fechaRecepcion || ''}
-            onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
-            readOnly={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
-          />
-        </div>
-        
-        <div>
           <label className="block text-sm font-medium text-gray-700">Cliente</label>
           <select 
             value={workOrder.cliente || ''}
@@ -417,6 +443,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
+            <option value="">Seleccione...</option>
             {clienteOptions.map(cliente => (
               <option key={cliente} value={cliente}>{cliente}</option>
             ))}
@@ -431,6 +458,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
+            <option value="">Seleccione...</option>
             {vendedorOptions.map(vendedor => (
               <option key={vendedor} value={vendedor}>{vendedor}</option>
             ))}
@@ -445,12 +473,36 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
+            <option value="">Seleccione...</option>
             {modeloEquipoOptions.map(modelo => (
               <option key={modelo} value={modelo}>{modelo}</option>
             ))}
           </select>
         </div>
         
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
+          <input
+            type="date"
+            value={workOrder.fechaVentaCliente || ''}
+            onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
+            readOnly={!isEditing}
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+          />
+        </div>
+
+        {/* Campos movidos al final */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
+          <input
+            type="date"
+            value={workOrder.fechaRecepcion || ''}
+            onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
+            readOnly={!isEditing}
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+          />
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700">Recibido Por</label>
           <select 
@@ -459,6 +511,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
+            <option value="">Seleccione...</option>
             {recibidoPorOptions.map(recibido => (
               <option key={recibido} value={recibido}>{recibido}</option>
             ))}
@@ -466,24 +519,14 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
-          <input 
-            type="date" 
-            value={workOrder.fechaVentaCliente || ''}
-            onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
-            readOnly={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
-          />
-        </div>
-        
-        <div>
           <label className="block text-sm font-medium text-gray-700">Estado</label>
           <select 
             value={workOrder.estado}
             onChange={(e) => onHeaderChange('estado', e.target.value)}
-            disabled={!isEditing}
+            disabled={!isEditing} // El estado inicial es "Creada" y no editable al principio
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
+            {/* No "Seleccione..." para estado, siempre debe tener un valor */}
             {otStatusOptions.map(status => (
               <option key={status} value={status}>{status}</option>
             ))}
