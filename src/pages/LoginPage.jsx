@@ -26,7 +26,7 @@ const LoginPage = ({ onLoginSuccess }) => { // Aceptar onLoginSuccess como prop
             className="h-12"
           />
         </div>
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">CMMS Sumitomo</h1>
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">CMMS</h1>
         <h2 className="text-xl text-center text-gray-700 mb-6">Iniciar Sesión</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
