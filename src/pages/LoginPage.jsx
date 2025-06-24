@@ -1,10 +1,21 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../index.css'; // Para acceder a las variables CSS globales y estilos base
-// Asumimos que App.css podría tener estilos más específicos de la app si es necesario
-// import '../App.css';
 
-const LoginPage = () => {
+const LoginPage = ({ onLoginSuccess }) => { // Aceptar onLoginSuccess como prop
+  const navigate = useNavigate();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // Aquí iría la lógica real de autenticación
+    // Por ahora, simulamos un login exitoso
+    console.log('Simulando login exitoso...');
+    if (onLoginSuccess) {
+      onLoginSuccess(); // Llama a la función pasada por App para actualizar el estado de autenticación
+    }
+    navigate('/'); // Redirige al HomePage
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
@@ -17,7 +28,7 @@ const LoginPage = () => {
         </div>
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">CMMS Sumitomo</h1>
         <h2 className="text-xl text-center text-gray-700 mb-6">Iniciar Sesión</h2>
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">Usuario</label>
             <input

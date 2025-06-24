@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, useParams, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
@@ -58,37 +58,76 @@ function App() {
   // correcto para usar useLocation, o necesitamos un componente intermedio.
 
   // Solución: Envolver AppContent con Router en App, y luego App puede tener otro Router
-  // o usar un contexto para la location.
-  // La forma más simple es modificar la lógica de renderizado del Header DENTRO de AppContent
-  // o crear un componente Layout que decida si mostrar Header.
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Estado de autenticación
 
-  // Para este caso, vamos a modificar la estructura para que App decida el layout.
-  // Las rutas de login y forgot-password no tendrán Header.
+  // Simular la verificación de un token al cargar la app (ej. desde localStorage)
+  useEffect(() => {
+    const token = localStorage.getItem('simulatedAuthToken');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('simulatedAuthToken', 'true'); // Simula guardar un token
+  };
+
+  const handleLogout = () => { // Función para simular logout si se necesita
+    setIsAuthenticated(false);
+    localStorage.removeItem('simulatedAuthToken');
+    // Podrías querer navegar a /login aquí también.
+    // navigate('/login'); // requeriría que App use useNavigate o esté dentro de un Router con acceso a él.
+  };
+
   return (
     <Router>
-      <Routes>
-        {/* Rutas que no muestran el Header */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-        {/* Rutas que sí muestran el Header (usando un layout) */}
-        <Route path="/*" element={<DefaultLayout />} />
-      </Routes>
+      <AppRoutes isAuthenticated={isAuthenticated} onLoginSuccess={handleLoginSuccess} />
     </Router>
   );
 }
 
+// Componente para manejar las rutas basado en el estado de autenticación
+const AppRoutes = ({ isAuthenticated, onLoginSuccess }) => {
+  const location = useLocation();
+
+  if (!isAuthenticated && location.pathname !== '/login' && location.pathname !== '/forgot-password') {
+    // Si no está autenticado y no está en login/forgot-password, redirige a login
+    // Preserva la ruta original para redirigir después del login si se desea (no implementado aquí)
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (isAuthenticated && (location.pathname === '/login' || location.pathname === '/forgot-password')) {
+    // Si está autenticado y trata de acceder a login/forgot-password, redirige a la home
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage onLoginSuccess={onLoginSuccess} />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Rutas protegidas que usan DefaultLayout */}
+      <Route path="/*" element={isAuthenticated ? <DefaultLayout /> : <Navigate to="/login" replace />} />
+    </Routes>
+  );
+};
+
 // Layout por defecto que incluye el Header y las rutas principales
 const DefaultLayout = () => {
+  // Aquí podrías añadir un botón de Logout en el Header que llame a handleLogout
+  // (requeriría pasar handleLogout a través de props o usar Context)
   return (
     <>
-      <Header />
+      <Header /> {/* Considerar pasar handleLogout a Header si se añade botón de logout */}
       <main className="pt-4">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/ot/:otId" element={<OTDetailsWrapper />} />
           {/* Otras rutas que usan el layout por defecto */}
+          {/* Ruta catch-all para / si no está autenticado y llega aquí (debería ser manejado antes) */}
+          {/* <Route path="*" element={<Navigate to="/" />} /> */}
         </Routes>
       </main>
     </>
