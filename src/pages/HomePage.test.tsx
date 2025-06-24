@@ -4,7 +4,7 @@ import { BrowserRouter as Router } from 'react-router-dom'; // Or MemoryRouter
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import HomePage from './HomePage';
-import { mockOrdenesTrabajo } from '../data/dropdownData';
+import { mockOrdenesTrabajo } from '../data/examples'; // Corrected import
 
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
