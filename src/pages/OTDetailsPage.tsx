@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   otStatusOptions, 
   clienteOptions, 
@@ -29,7 +28,7 @@ const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random
 const generateOtId = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Meses son 0-indexados
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
   const day = date.getDate().toString().padStart(2, '0');
   const correlativo = "001"; // Simplificación por ahora
   return `OT${year}${month}${day}${correlativo}`;
@@ -41,34 +40,32 @@ interface WorkOrderFormProps {
 }
 
 const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, isNew }) => {
-  console.log("WorkOrderForm props - isNew:", isNew, "initialOt:", initialOt); // Log para props
   // State for the current work order
   const [workOrder, setWorkOrder] = useState<OrdenTrabajo>(() => {
-    console.log("useState initializer - isNew:", isNew, "initialOt:", initialOt); // Log dentro de useState
+    // console.log("WorkOrderForm props - isNew:", isNew, "initialOt:", initialOt); // Log para props
+    // console.log("useState initializer - isNew:", isNew, "initialOt:", initialOt); // Log dentro de useState
     if (isNew) {
-      console.log("useState initializer - Creating NEW work order");
-      const newOtId = generateOtId(); // Usar la nueva función para generar ID de OT
+      // console.log("useState initializer - Creating NEW work order");
+      const newOtId = generateOtId();
       const newWorkOrder: OrdenTrabajo = {
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
-        estado: "Creación", // Estado inicial
-
-        // Initialize other fields as needed, e.g., with empty strings or default values
+        creadoPor: "UsuarioActual", // Placeholder
+        estado: "Creada", 
         motivoIngreso: '',
         cliente: '',
         vendedor: '',
-        numeroSerie: '', // Permitir que el usuario ingrese esto
+        numeroSerie: '',
         modelo: '',
         recibidoPor: '',
         fechaVentaCliente: '',
-        fechaRecepcion: '', // Asegurar que esté vacío
+        fechaRecepcion: '', 
         tipoProducto: '',
-        producto: '', // Asegurar que esté vacío
-        productoOtro: '', // Asegurar que esté vacío
-        orientacion: '', // Asegurar que esté vacío
-        reduccion: '', // Asegurar que esté vacío
-        // Asegúrate de inicializar todas las propiedades requeridas por OrdenTrabajo
-        // Por ejemplo, las pestañas podrían necesitar objetos vacíos o con valores por defecto
+        producto: '',
+        productoOtro: '',
+        orientacion: '',
+        reduccion: '',
+        historial: [{ fecha: new Date().toISOString(), evento: "OT Creada", responsable: "UsuarioActual" }],
         inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
         limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, realizadoPor: '', comentarios: '', fotos: [] },
         desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
@@ -85,48 +82,70 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
           changeType: "OT_CREATION",
           description: `Nueva Orden de Trabajo ${newOtId} creada.`,
           details: { otId: newOtId }
-        }],
-        creadoPor: '',
-        historial: []
+        }]
       };
       return newWorkOrder;
     } else if (initialOt) {
-      // Initialize changeLog if it doesn't exist for an existing OT
+      // console.log("useState initializer - Using initialOt:", initialOt);
       if (!initialOt.changeLog) {
         initialOt.changeLog = [{
           id: generateUUID(),
           timestamp: new Date().toISOString(),
-          user: "Sistema",
-          changeType: "OT_CREATION", // Or a more appropriate type like "LOG_INIT"
+          user: "Sistema", 
+          changeType: "OT_CREATION", 
           description: `Historial de cambios inicializado para OT ${initialOt.id} (N/S: ${initialOt.numeroSerie || 'N/A'}).`,
           details: { numeroSerie: initialOt.numeroSerie }
         }];
       }
       return initialOt;
+    } else {
+      // Fallback si ni isNew es true ni initialOt es provisto (escenario inesperado)
+      console.error("OTDetailsPage: Ni isNew ni initialOt fueron provistos. Creando OT de emergencia.");
+      const emergencyId = generateOtId();
+      const emergencyOt: OrdenTrabajo = {
+        id: emergencyId,
+        fechaCreacion: new Date().toISOString().split('T')[0],
+        creadoPor: "SistemaEmergencia",
+        estado: "Error",
+        motivoIngreso: '',
+        cliente: '',
+        vendedor: '',
+        numeroSerie: 'ERROR',
+        modelo: '',
+        recibidoPor: '',
+        fechaVentaCliente: '',
+        fechaRecepcion: '',
+        tipoProducto: '',
+        producto: '',
+        productoOtro: '',
+        orientacion: '',
+        reduccion: '',
+        historial: [{ fecha: new Date().toISOString(), evento: "OT de Emergencia Creada", responsable: "SistemaEmergencia" }],
+        inspeccionVisual: { realizadoPor: '', fecha: '', comentarios: '', fotos: [] },
+        limpiezaEquipo: { tipoLavado: '', fechaRealizacion: '', internoOProveedor: undefined, realizadoPor: '', comentarios: '', fotos: [] },
+        desarme: { accionARealizar: '', fecha: '', realizadoPor: '', fotos: [] },
+        diagnosticoPiezas: { piezas: [], fecha: '', realizadoPor: '' },
+        presupuesto: { items: [], valorTotal: 0, fechaCreacion: '', creadoPor: '', subtotal: 0, impuestos: 0, totalGeneral: 0 },
+        reparacion: { piezasAdicionales: [], comentarios: '', realizadoPor: '' },
+        pruebasDinamicas: { tipoPrueba: '', resultados: '', fotos: [], fecha: '', realizadoPor: '' },
+        aprobacionCalidad: { aprobado: false, firma: '', fecha: '', aprobadoPor: '' },
+        despacho: { guiaDespacho: '', fechaDespacho: '', despachadoPor: '', comentarios: '', adjuntos: [] },
+        changeLog: [{
+          id: generateUUID(),
+          timestamp: new Date().toISOString(),
+          user: "Sistema",
+          changeType: "OT_CREATION",
+          description: `OT de Emergencia ${emergencyId} creada debido a falta de datos.`,
+          details: { otId: emergencyId, error: "Faltan isNew o initialOt" }
+        }]
+      };
+      return emergencyOt;
     }
-    // Fallback to a default mock OT if no data is provided (should ideally not happen with proper routing)
-    // Or, better, throw an error or redirect if initialOt is expected but not provided and not isNew
-    }
-    // Fallback to a default mock OT if no data is provided (should ideally not happen with proper routing)
-    // Or, better, throw an error or redirect if initialOt is expected but not provided and not isNew
-    console.warn("WorkOrderForm cargado sin OT inicial y no está en modo 'nuevo'. Usando mock data.");
-    const fallbackOt = mockOrdenesTrabajo[0]; // Consider removing this or handling it more gracefully
-    if (!fallbackOt.changeLog) {
-        fallbackOt.changeLog = [{
-            id: generateUUID(),
-            timestamp: new Date().toISOString(),
-            user: "Sistema",
-            changeType: "OT_CREATION",
-            description: `OT de respaldo ${fallbackOt.id} cargada (N/S: ${fallbackOt.numeroSerie || 'N/A'}).`,
-            details: { numeroSerie: fallbackOt.numeroSerie }
-        }];
-    }
-    return fallbackOt;
   });
   // State for active tab
   const [activeTab, setActiveTab] = useState('inspeccion');
   // No local serialNumber state here, workOrder.numeroSerie is the truth
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Para el botón "Volver a Home"
 
   // Function to add a new entry to the change log
   const addChangeLogEntry = (entryData: Omit<ChangeHistoryEntry, 'id' | 'timestamp' | 'user'>) => {
@@ -146,11 +165,9 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // Function to handle changes in the header form
   const handleHeaderChange = (field: string, value: any) => {
     const oldValue = workOrder[field];
-    if (oldValue !== value) { // Solo loguear si el valor realmente cambió
-      // Attempt to get a more user-friendly field name
-      // This can be expanded with more specific mappings if needed
+    if (oldValue !== value) { 
       const fieldNameMappings: Record<string, string> = {
-        numeroSerie: "Número de Serie",
+        numeroSerie: "Número de Serie (Equipo)",
         tipoProducto: "Tipo de Producto",
         tipoGB: "Tipo GB",
         tipoGM: "Tipo GM",
@@ -179,57 +196,44 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   };
 
   const handleNumeroSerieBlur = (numeroSerieIngresado: string) => {
-    if (!numeroSerieIngresado) return;
-
     const trimmedNumeroSerie = numeroSerieIngresado.trim();
-    if (!trimmedNumeroSerie) return; // No hacer nada si después de trim queda vacío
+    if (!trimmedNumeroSerie) return;
 
+    // console.log("Número de Serie Ingresado (trimmed):", trimmedNumeroSerie);
     const otEncontrada = mockOrdenesTrabajo.find(ot => String(ot.numeroSerie).trim() === trimmedNumeroSerie);
-    console.log("Número de Serie Ingresado (trimmed):", trimmedNumeroSerie);
-    console.log("OT Encontrada:", otEncontrada);
+    // console.log("OT Encontrada:", otEncontrada);
 
     if (otEncontrada) {
-      console.log("Autocompletando con datos de OT Encontrada:", otEncontrada);
+      // console.log("Autocompletando con datos de OT Encontrada:", otEncontrada);
       setWorkOrder(prevWorkOrder => {
-        // Solo actualiza los campos si otEncontrada tiene un valor para ellos (diferente de undefined)
-        // Si el valor en otEncontrada es un string vacío, se usará ese string vacío.
         const updates: Partial<OrdenTrabajo> = {};
         if (otEncontrada.tipoProducto !== undefined) updates.tipoProducto = otEncontrada.tipoProducto;
+        if (otEncontrada.producto !== undefined) updates.producto = otEncontrada.producto;
+        if (otEncontrada.productoOtro !== undefined) updates.productoOtro = otEncontrada.productoOtro;
         if (otEncontrada.orientacion !== undefined) updates.orientacion = otEncontrada.orientacion;
         if (otEncontrada.reduccion !== undefined) updates.reduccion = otEncontrada.reduccion;
         if (otEncontrada.cliente !== undefined) updates.cliente = otEncontrada.cliente;
         if (otEncontrada.vendedor !== undefined) updates.vendedor = otEncontrada.vendedor;
         if (otEncontrada.modelo !== undefined) updates.modelo = otEncontrada.modelo;
         if (otEncontrada.fechaVentaCliente !== undefined) updates.fechaVentaCliente = otEncontrada.fechaVentaCliente;
-        if (otEncontrada.producto !== undefined) updates.producto = otEncontrada.producto;
-        if (otEncontrada.productoOtro !== undefined) updates.productoOtro = otEncontrada.productoOtro;
-        // También es importante actualizar el 'estado' y otros campos relevantes si es necesario
-        // por ahora solo los que pidió el usuario explícitamente.
-
+        // No actualizamos fechaRecepcion desde el autocompletado, ya que el usuario podría haberla puesto.
         return { ...prevWorkOrder, ...updates };
       });
 
       addChangeLogEntry({
-        changeType: "HEADER_FIELD_UPDATE", // Podríamos crear un ChangeType específico para autocompletado
-        description: `Campos autocompletados basados en N/S: ${numeroSerieIngresado}.`,
-        details: { numeroSerie: numeroSerieIngresado, origen: "Autocompletado por N/S" }
+        changeType: "HEADER_FIELD_UPDATE", 
+        description: `Campos autocompletados basados en N/S: ${trimmedNumeroSerie}.`,
+        details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado por N/S" }
       });
     }
-    // Si no se encuentra, no se hace nada, los campos mantienen sus valores actuales.
-    // Opcionalmente, se podrían limpiar si esa fuera la lógica deseada.
   };
   
   // Function to handle changes in the history (OLD - TO BE REMOVED/REPLACED)
   // const handleHistoryChange = (newHistory) => {
   //   setWorkOrder(prev => ({ ...prev, historial: newHistory }));
   // };
-
   // Remove handleHistoryChange prop from HistoryPanel later
-  // The new HistoryPanel will just display workOrder.changeLog
   const handleHistoryChange = (newHistory) => {
-    // This function is now OBSOLETE for the new immutable history.
-    // Kept temporarily to avoid breaking HistoryPanel prop immediately.
-    // It should not be used to modify the new changeLog.
     console.warn("handleHistoryChange is obsolete and should be removed.");
   };
   
@@ -243,13 +247,12 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
           Volver a Home
         </button>
       </div>
-
       {/* Header with equipment info, client info, and status */}
       <Header 
         workOrder={workOrder} 
         onHeaderChange={handleHeaderChange}
-        onNumeroSerieBlur={handleNumeroSerieBlur} // Pasar la nueva función
-        isNewOt={isNew}
+        onNumeroSerieBlur={handleNumeroSerieBlur}
+        isNewOt={isNew} // isNew (de props) se pasa como isNewOt al Header
       />
       
       {/* Tabs for different sections */}
@@ -270,13 +273,10 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
 };
 
 // Header component
-// Removed serialNumber and setSerialNumber props, uses workOrder.numeroSerie and onHeaderChange
-const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { // Added onNumeroSerieBlur and isNewOt props
-  const [isEditing, setIsEditing] = useState(isNewOt); // Start in editing mode if new OT
+const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
+  const [isEditing, setIsEditing] = useState(isNewOt); // isNewOt viene de isNew en WorkOrderForm
 
   const toggleEditing = () => {
-    // For a new OT, "Guardar Cambios" could eventually trigger a save action
-    // For now, it just toggles the editing state.
     setIsEditing(!isEditing);
   };
 
@@ -297,7 +297,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
           <input
             type="text"
             value={workOrder.id || ''}
-            readOnly // ID de la OT siempre es de solo lectura
+            readOnly 
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100"
           />
         </div>
@@ -307,18 +307,18 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             type="text"
             value={workOrder.numeroSerie || ''}
             onChange={(e) => onHeaderChange('numeroSerie', e.target.value)}
-            onBlur={(e) => onNumeroSerieBlur(e.target.value)} // Llamar a la función en onBlur
-            readOnly={!isEditing} // Solo depende de isEditing
+            onBlur={(e) => onNumeroSerieBlur(e.target.value)}
+            readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Tipo de Producto</label>
-          <select
+          <select 
             value={workOrder.tipoProducto || ''}
             onChange={(e) => onHeaderChange('tipoProducto', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
@@ -326,14 +326,14 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             <option value="GM">GM</option>
           </select>
         </div>
-
+        
         {workOrder.tipoProducto === 'GB' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GB</label>
-            <select
+            <select 
               value={workOrder.tipoGB || ''}
               onChange={(e) => onHeaderChange('tipoGB', e.target.value)}
-              disabled={!isEditing} // Solo depende de isEditing
+              disabled={!isEditing}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione...</option>
@@ -346,14 +346,14 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             </select>
           </div>
         )}
-
+        
         {workOrder.tipoProducto === 'GM' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GM</label>
-            <select
+            <select 
               value={workOrder.tipoGM || ''}
               onChange={(e) => onHeaderChange('tipoGM', e.target.value)}
-              disabled={!isEditing} // Solo depende de isEditing
+              disabled={!isEditing}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione...</option>
@@ -366,13 +366,13 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             </select>
           </div>
         )}
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Orientación</label>
-          <select
+          <select 
             value={workOrder.orientacion || ''}
             onChange={(e) => onHeaderChange('orientacion', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
@@ -380,13 +380,13 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             <option value="horizontal">Horizontal</option>
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Reducción</label>
-          <select
+          <select 
             value={workOrder.reduccion || ''}
             onChange={(e) => onHeaderChange('reduccion', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             <option value="">Seleccione...</option>
@@ -396,24 +396,24 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             <option value="cuadruple">Cuadruple Reducción</option>
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
-          <input
-            type="date"
+          <input 
+            type="date" 
             value={workOrder.fechaRecepcion || ''}
             onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
-            readOnly={!isEditing} // Solo depende de isEditing
+            readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Cliente</label>
-          <select
+          <select 
             value={workOrder.cliente || ''}
             onChange={(e) => onHeaderChange('cliente', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {clienteOptions.map(cliente => (
@@ -421,13 +421,13 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Vendedor</label>
-          <select
+          <select 
             value={workOrder.vendedor || ''}
             onChange={(e) => onHeaderChange('vendedor', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {vendedorOptions.map(vendedor => (
@@ -435,13 +435,13 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Modelo del Equipo</label>
-          <select
+          <select 
             value={workOrder.modelo || ''}
             onChange={(e) => onHeaderChange('modelo', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {modeloEquipoOptions.map(modelo => (
@@ -449,13 +449,13 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Recibido Por</label>
-          <select
+          <select 
             value={workOrder.recibidoPor || ''}
             onChange={(e) => onHeaderChange('recibidoPor', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {recibidoPorOptions.map(recibido => (
@@ -463,24 +463,24 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => { 
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
-          <input
-            type="date"
+          <input 
+            type="date" 
             value={workOrder.fechaVentaCliente || ''}
             onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
-            readOnly={!isEditing} // Solo depende de isEditing
+            readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Estado</label>
-          <select
+          <select 
             value={workOrder.estado}
             onChange={(e) => onHeaderChange('estado', e.target.value)}
-            disabled={!isEditing} // Solo depende de isEditing
+            disabled={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           >
             {otStatusOptions.map(status => (
@@ -2233,10 +2233,10 @@ const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) =>
               </div>
             )}
           </div>
-        )})}
+        ))}
       </div>
     </div>
   );
 };
 
-export default WorkOrderForm; // Componente principal del formulario de OT
+export default WorkOrderForm;
