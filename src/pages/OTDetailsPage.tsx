@@ -28,7 +28,7 @@ const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random
 const generateOtId = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
   const day = date.getDate().toString().padStart(2, '0');
   const correlativo = "001"; // Simplificación por ahora
   return `OT${year}${month}${day}${correlativo}`;
@@ -51,7 +51,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         id: newOtId,
         fechaCreacion: new Date().toISOString().split('T')[0],
         creadoPor: "UsuarioActual", // Placeholder
-        estado: "Creada",
+        estado: "Creada", 
         motivoIngreso: '',
         cliente: '',
         vendedor: '',
@@ -59,7 +59,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         modelo: '',
         recibidoPor: '',
         fechaVentaCliente: '',
-        fechaRecepcion: '',
+        fechaRecepcion: '', 
         tipoProducto: '',
         producto: '',
         productoOtro: '',
@@ -91,8 +91,8 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         initialOt.changeLog = [{
           id: generateUUID(),
           timestamp: new Date().toISOString(),
-          user: "Sistema",
-          changeType: "OT_CREATION",
+          user: "Sistema", 
+          changeType: "OT_CREATION", 
           description: `Historial de cambios inicializado para OT ${initialOt.id} (N/S: ${initialOt.numeroSerie || 'N/A'}).`,
           details: { numeroSerie: initialOt.numeroSerie }
         }];
@@ -165,7 +165,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   // Function to handle changes in the header form
   const handleHeaderChange = (field: string, value: any) => {
     const oldValue = workOrder[field];
-    if (oldValue !== value) {
+    if (oldValue !== value) { 
       const fieldNameMappings: Record<string, string> = {
         numeroSerie: "Número de Serie (Equipo)",
         tipoProducto: "Tipo de Producto",
@@ -221,7 +221,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
       });
 
       addChangeLogEntry({
-        changeType: "HEADER_FIELD_UPDATE",
+        changeType: "HEADER_FIELD_UPDATE", 
         description: `Campos autocompletados basados en N/S: ${trimmedNumeroSerie}.`,
         details: { numeroSerie: trimmedNumeroSerie, origen: "Autocompletado por N/S" }
       });
@@ -297,7 +297,7 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
           <input
             type="text"
             value={workOrder.id || ''}
-            readOnly
+            readOnly 
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100"
           />
         </div>
@@ -312,10 +312,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Tipo de Producto</label>
-          <select
+          <select 
             value={workOrder.tipoProducto || ''}
             onChange={(e) => onHeaderChange('tipoProducto', e.target.value)}
             disabled={!isEditing}
@@ -326,11 +326,11 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             <option value="GM">GM</option>
           </select>
         </div>
-
+        
         {workOrder.tipoProducto === 'GB' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GB</label>
-            <select
+            <select 
               value={workOrder.tipoGB || ''}
               onChange={(e) => onHeaderChange('tipoGB', e.target.value)}
               disabled={!isEditing}
@@ -346,11 +346,11 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             </select>
           </div>
         )}
-
+        
         {workOrder.tipoProducto === 'GM' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Tipo GM</label>
-            <select
+            <select 
               value={workOrder.tipoGM || ''}
               onChange={(e) => onHeaderChange('tipoGM', e.target.value)}
               disabled={!isEditing}
@@ -366,10 +366,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             </select>
           </div>
         )}
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Orientación</label>
-          <select
+          <select 
             value={workOrder.orientacion || ''}
             onChange={(e) => onHeaderChange('orientacion', e.target.value)}
             disabled={!isEditing}
@@ -380,10 +380,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             <option value="horizontal">Horizontal</option>
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Reducción</label>
-          <select
+          <select 
             value={workOrder.reduccion || ''}
             onChange={(e) => onHeaderChange('reduccion', e.target.value)}
             disabled={!isEditing}
@@ -396,21 +396,21 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             <option value="cuadruple">Cuadruple Reducción</option>
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
-          <input
-            type="date"
+          <input 
+            type="date" 
             value={workOrder.fechaRecepcion || ''}
             onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
             readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Cliente</label>
-          <select
+          <select 
             value={workOrder.cliente || ''}
             onChange={(e) => onHeaderChange('cliente', e.target.value)}
             disabled={!isEditing}
@@ -421,10 +421,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Vendedor</label>
-          <select
+          <select 
             value={workOrder.vendedor || ''}
             onChange={(e) => onHeaderChange('vendedor', e.target.value)}
             disabled={!isEditing}
@@ -435,10 +435,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Modelo del Equipo</label>
-          <select
+          <select 
             value={workOrder.modelo || ''}
             onChange={(e) => onHeaderChange('modelo', e.target.value)}
             disabled={!isEditing}
@@ -449,10 +449,10 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Recibido Por</label>
-          <select
+          <select 
             value={workOrder.recibidoPor || ''}
             onChange={(e) => onHeaderChange('recibidoPor', e.target.value)}
             disabled={!isEditing}
@@ -463,21 +463,21 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             ))}
           </select>
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
-          <input
-            type="date"
+          <input 
+            type="date" 
             value={workOrder.fechaVentaCliente || ''}
             onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
             readOnly={!isEditing}
             className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
           />
         </div>
-
+        
         <div>
           <label className="block text-sm font-medium text-gray-700">Estado</label>
-          <select
+          <select 
             value={workOrder.estado}
             onChange={(e) => onHeaderChange('estado', e.target.value)}
             disabled={!isEditing}
