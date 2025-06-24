@@ -4,7 +4,7 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import OTDetailsPage from './pages/OTDetailsPage.tsx'; // Import the new page
-import { mockOrdenesTrabajo } from './data/dropdownData'; // To fetch OT data
+import { mockOrdenesTrabajo } from './data/examples'; // Corrected import: To fetch OT data
 import './App.css'; // Mantener si hay estilos globales aquí
 
 // Wrapper component to fetch OT data and pass it to OTDetailsPage

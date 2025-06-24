@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { AppContent } from './App'; // Import AppContent
-import { mockOrdenesTrabajo } from './data/dropdownData';
+import { mockOrdenesTrabajo } from './data/examples'; // Corrected import
 import OTDetailsPage from './pages/OTDetailsPage'; // Actual component for verification
 
 // Mock OTDetailsPage to simplify App test and focus on routing/wrapper logic

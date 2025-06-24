@@ -6,7 +6,7 @@ import {
   vendedorOptions, 
   modeloEquipoOptions, 
   recibidoPorOptions,
-  mockOrdenesTrabajo,
+  // mockOrdenesTrabajo, // Movido a examples.ts
   ChangeHistoryEntry,
   ChangeType,
   OrdenTrabajo,
@@ -14,6 +14,7 @@ import {
   PiezaDetalle,     // Added import
   PresupuestoItem   // Added import
 } from '../data/dropdownData';
+import { mockOrdenesTrabajo } from '../data/examples'; // Importar desde examples.ts
 
 // Define common props for Tab components
 interface TabComponentProps {
@@ -206,15 +207,14 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
     if (trimmedNumeroSerie === "1234") {
       // Ejemplo específico para el número de serie 1234
       const exampleData: Partial<OrdenTrabajo> = {
-        tipoProducto: "GM", // Ejemplo
-        producto: "Cyclo", // Ejemplo, asegúrate que coincida con tipoProducto
-        reduccion: "doble", // Ejemplo
-        orientacion: "vertical", // Ejemplo
-        cliente: "Cliente Ejemplo SA", // Ejemplo
-        vendedor: "Vendedor Estrella", // Ejemplo
-        modelo: "Modelo XYZ-1234", // Ejemplo
-        fechaVentaCliente: "2024-01-10", // Ejemplo
-        // tipoGM: "Cyclo" // Si usas producto para el tipo específico (Cyclo, Paramax, etc.)
+        tipoProducto: "GM",
+        producto: "Cyclo",
+        reduccion: "doble",
+        orientacion: "vertical",
+        cliente: clienteOptions[0], // Usar el primer cliente de las opciones
+        vendedor: vendedorOptions[0], // Usar el primer vendedor de las opciones
+        modelo: modeloEquipoOptions[0], // Usar el primer modelo de las opciones
+        fechaVentaCliente: "2024-01-10",
       };
       setWorkOrder(prevWorkOrder => ({
         ...prevWorkOrder,

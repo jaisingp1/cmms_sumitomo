@@ -8,9 +8,10 @@ import {
   vendedorOptions,
   modeloEquipoOptions,
   recibidoPorOptions,
-  mockOrdenesTrabajo,
+  // mockOrdenesTrabajo, // Moved to examples.ts
   OrdenTrabajo
 } from '../data/dropdownData'; // Adjust the path as necessary
+import { mockOrdenesTrabajo } from '../data/examples'; // Corrected import
 
 // Define a type for the keys of OrdenTrabajo to be used for filtering and column selection
 type OrdenTrabajoKeys = keyof OrdenTrabajo;
