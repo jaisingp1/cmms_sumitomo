@@ -2234,7 +2234,7 @@ const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) =>
               </div>
             )}
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );
