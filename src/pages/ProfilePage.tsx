@@ -33,9 +33,9 @@ interface InfoFieldProps {
 }
 const InfoField: React.FC<InfoFieldProps> = ({ label, value, isEditable = false }) => (
   <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-    <p className="text-sm font-medium text-gray-600 md:col-span-1">{label}:</p>
-    <div className={`text-sm text-gray-800 md:col-span-2 ${isEditable ? 'p-2 border border-gray-200 rounded bg-gray-50' : ''}`}>
-      {value ?? <span className="text-gray-400 italic">No disponible</span>}
+    <p className="text-sm font-semibold text-gray-900 md:col-span-1">{label}:</p> {/* Aumentado contraste y grosor */}
+    <div className={`text-sm text-gray-700 md:col-span-2 ${isEditable ? 'p-2 border border-gray-200 rounded bg-gray-50' : ''}`}> {/* Ajustado contraste valor */}
+      {value ?? <span className="text-gray-500 italic">No disponible</span>} {/* Ajustado contraste placeholder */}
     </div>
   </div>
 );
