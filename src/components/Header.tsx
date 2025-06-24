@@ -6,7 +6,11 @@ from 'react-router-dom';
 
 import { simulatedUser } from '../userData'; // Importar datos simulados
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onLogout?: () => void; // Prop opcional para el logout
+}
+
+const Header: React.FC<HeaderProps> = ({ onLogout }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +57,7 @@ const Header: React.FC = () => {
             profileImageUrl={simulatedUser.profileImageUrl}
             onProfileClick={toggleDropdown}
           />
-          <DropdownMenu isOpen={isDropdownOpen} onClose={closeDropdown} />
+          <DropdownMenu isOpen={isDropdownOpen} onClose={closeDropdown} onLogout={onLogout} /> {/* Pasar onLogout a DropdownMenu */}
         </div>
       </div>
     </header>

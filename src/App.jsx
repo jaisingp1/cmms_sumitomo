@@ -82,13 +82,17 @@ function App() {
 
   return (
     <Router>
-      <AppRoutes isAuthenticated={isAuthenticated} onLoginSuccess={handleLoginSuccess} />
+      <AppRoutes
+        isAuthenticated={isAuthenticated}
+        onLoginSuccess={handleLoginSuccess}
+        onLogout={handleLogout} // Pasar handleLogout a AppRoutes
+      />
     </Router>
   );
 }
 
 // Componente para manejar las rutas basado en el estado de autenticación
-const AppRoutes = ({ isAuthenticated, onLoginSuccess }) => {
+const AppRoutes = ({ isAuthenticated, onLoginSuccess, onLogout }) => { // Recibir onLogout
   const location = useLocation();
 
   if (!isAuthenticated && location.pathname !== '/login' && location.pathname !== '/forgot-password') {
@@ -108,18 +112,17 @@ const AppRoutes = ({ isAuthenticated, onLoginSuccess }) => {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Rutas protegidas que usan DefaultLayout */}
-      <Route path="/*" element={isAuthenticated ? <DefaultLayout /> : <Navigate to="/login" replace />} />
+      {/* Pasar onLogout a DefaultLayout para que pueda pasarlo a Header */}
+      <Route path="/*" element={isAuthenticated ? <DefaultLayout onLogout={onLogout} /> : <Navigate to="/login" replace />} />
     </Routes>
   );
 };
 
 // Layout por defecto que incluye el Header y las rutas principales
-const DefaultLayout = () => {
-  // Aquí podrías añadir un botón de Logout en el Header que llame a handleLogout
-  // (requeriría pasar handleLogout a través de props o usar Context)
+const DefaultLayout = ({ onLogout }) => { // Recibir onLogout
   return (
     <>
-      <Header /> {/* Considerar pasar handleLogout a Header si se añade botón de logout */}
+      <Header onLogout={onLogout} /> {/* Pasar onLogout a Header */}
       <main className="pt-4">
         <Routes>
           <Route path="/" element={<HomePage />} />
