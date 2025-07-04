@@ -20,18 +20,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     if (storedTheme) {
       return storedTheme;
     }
-    // If no stored theme, check prefers-color-scheme
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
-    return 'light'; // Default to light
+    return 'light';
   });
 
   useEffect(() => {
+    // console.log(`Applying theme: ${theme}`); // For debugging
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      // console.log('Added .dark class to html element');
     } else {
       document.documentElement.classList.remove('dark');
+      // console.log('Removed .dark class from html element');
     }
     localStorage.setItem('theme', theme);
   }, [theme]);

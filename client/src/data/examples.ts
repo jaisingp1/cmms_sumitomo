@@ -20,7 +20,6 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     modelo: modeloEquipoOptions[0], // Laptop HP EliteBook 840 G5
     fechaVentaCliente: "2023-01-15", // Fecha de ejemplo
     estado: otStatusOptions[0], // Creada
-    priority: "Media", // Added priority
     historial: [
       { fecha: new Date().toISOString(), evento: "OT Creada", responsable: "UsuarioSistema" },
     ],
@@ -40,7 +39,6 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     reduccion: reduccionOptions[0], // Reducción simple
     cliente: clienteOptions[1], // Empresa XYZ
     estado: otStatusOptions[1], // Equipo Recepcionado
-    priority: "Alta", // Added priority
     fechaRecepcionBodega: new Date().toISOString(),
     recepcionadoPor: "David Ríos (Bodega)",
     fotoPlaca: { url: "/path/to/placa_222.jpg", descripcion: "Placa equipo SN 222", fecha: new Date().toISOString(), subidoPor: "David Ríos (Bodega)"},
@@ -61,7 +59,6 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     reduccion: reduccionOptions[2], // Triple reducción
     cliente: clienteOptions[2], // Juan Pérez
     estado: otStatusOptions[2], // Inspección Visual Realizada
-    priority: "Media", // Added priority
     fechaRecepcionBodega: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     recepcionadoPor: "Elena Sánchez (Recepción)",
     fotoPlaca: { url: "/path/to/placa_333.jpg", descripcion: "Placa equipo SN 333", fecha: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), subidoPor: "Elena Sánchez (Recepción)"},
@@ -91,7 +88,6 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     reduccion: reduccionOptions[3], // Cuadruple reducción
     cliente: clienteOptions[3], // Servicios TI Ltda.
     estado: otStatusOptions[6], // Presupuesto Enviado
-    priority: "Baja", // Added priority
     // ... (datos de etapas anteriores poblados)
     fechaRecepcionBodega: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     recepcionadoPor: "David Ríos (Bodega)",
@@ -140,7 +136,6 @@ export const mockOrdenesTrabajo: OrdenTrabajo[] = [
     creadoPor: "UsuarioMostrador",
     cliente: clienteOptions[4], // Global Solutions S.A.
     estado: otStatusOptions[0], // Creada
-    priority: "Media", // Added priority
     // numeroSerie es undefined
     tipoProducto: tipoProductoOptions[0], // GB
     producto: productoGBOptions[1], // Hansen

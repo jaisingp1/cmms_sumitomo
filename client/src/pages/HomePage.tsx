@@ -2,20 +2,16 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import {
-  OrdenTrabajo, // Ensure OrdenTrabajo type is imported for state
   otStatusOptions,
-  priorityOptions, // Import priority options
   motivoIngresoOptions,
   clienteOptions,
   vendedorOptions,
   modeloEquipoOptions,
   recibidoPorOptions,
   // mockOrdenesTrabajo, // Moved to examples.ts
-  // mockOrdenesTrabajo, // Moved to examples.ts
-  // OrdenTrabajo // Already imported above
+  OrdenTrabajo
 } from '../data/dropdownData'; // Adjust the path as necessary
 import { mockOrdenesTrabajo } from '../data/examples'; // Corrected import
-import OTSummaryCard from '../components/OTSummaryCard'; // Import the summary card component
 
 import ThemeToggler from '../components/ThemeToggler'; // Import ThemeToggler
 
@@ -26,7 +22,6 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
-  const [summaryOt, setSummaryOt] = useState<OrdenTrabajo | null>(null); // State for summary card
   const [sortColumn, setSortColumn] = useState<OrdenTrabajoKeys | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -34,10 +29,10 @@ const HomePage: React.FC = () => {
   const [filters, setFilters] = useState<Partial<Record<OrdenTrabajoKeys, string>>>({});
 
   // State for visible columns
-  const defaultVisibleColumns: OrdenTrabajoKeys[] = ["id", "fechaCreacion", "cliente", "estado", "priority"]; // Added priority
+  const defaultVisibleColumns: OrdenTrabajoKeys[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "estado"];
   const allPossibleColumns: OrdenTrabajoKeys[] = [
     "id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente",
-    "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority" // Added priority
+    "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado"
   ];
   const [visibleColumns, setVisibleColumns] = useState<OrdenTrabajoKeys[]>(defaultVisibleColumns);
 
@@ -71,21 +66,13 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority?: string): string => {
-    switch (priority) {
-      case "Alta": return "bg-red-500 text-white";
-      case "Media": return "bg-yellow-400 text-gray-800";
-      case "Baja": return "bg-green-400 text-white";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const filteredData = useMemo(() => {
     return mockOrdenesTrabajo.filter(ot => {
       // Search term filter (searches all fields, visible or hidden)
       const matchesSearchTerm = Object.entries(ot).some(([key, value]) => {
         // Asegurarse que solo se consideren strings, numbers o booleans para la búsqueda.
-        const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority", "diagnosticoInicial", "notasReparacion"]; // Added priority
+        // Campos como 'historial', 'fotos', 'detallesRevision', etc. no deberían ser stringificados directamente para búsqueda general.
+        const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "diagnosticoInicial", "notasReparacion"];
         if (searchableKeys.includes(key as keyof OrdenTrabajo)) {
           return String(value).toLowerCase().includes(searchTerm);
         }
@@ -99,9 +86,10 @@ const HomePage: React.FC = () => {
         return String(otValue).toLowerCase().includes(filterValue.toLowerCase());
       });
 
-      let sortedData = [...(matchesSearchTerm && matchesFilters ? mockOrdenesTrabajo.filter(ot => {
+      // Apply filtering first
+      let processedData = mockOrdenesTrabajo.filter(ot => {
         const searchMatch = Object.entries(ot).some(([key, value]) => {
-          const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority", "diagnosticoInicial", "notasReparacion"];
+          const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "diagnosticoInicial", "notasReparacion"];
           if (searchableKeys.includes(key as keyof OrdenTrabajo)) {
             return String(value).toLowerCase().includes(searchTerm);
           }
@@ -113,35 +101,55 @@ const HomePage: React.FC = () => {
           return String(otValue).toLowerCase().includes(filterValue.toLowerCase());
         });
         return searchMatch && filterMatch;
-      }) : [])];
+      });
 
-
+      // Then apply sorting
       if (sortColumn) {
-        sortedData.sort((a, b) => {
+        // console.log(`Sorting by: ${sortColumn}, direction: ${sortDirection}`);
+        // console.log('Data before sort:', JSON.parse(JSON.stringify(processedData.map(d => d[sortColumn]))));
+        processedData.sort((a, b) => {
           const valA = a[sortColumn];
           const valB = b[sortColumn];
 
-          // Basic null/undefined handling: place them at the end for asc, start for desc
+          // console.log(`Comparing A: ${valA} (${typeof valA}) with B: ${valB} (${typeof valB}) for column ${sortColumn}`);
+
           if (valA == null && valB == null) return 0;
           if (valA == null) return sortDirection === 'asc' ? 1 : -1;
           if (valB == null) return sortDirection === 'asc' ? -1 : 1;
 
           if (typeof valA === 'number' && typeof valB === 'number') {
-            return sortDirection === 'asc' ? valA - valB : valB - valA;
+            const comparison = sortDirection === 'asc' ? valA - valB : valB - valA;
+            // console.log(`Num compare result: ${comparison}`);
+            return comparison;
           }
-          // Default to string comparison
-          const strValA = String(valA).toLowerCase();
-          const strValB = String(valB).toLowerCase();
+
+          // Ensure null/undefined become empty strings before String() and toLowerCase()
+          const strValA = String(valA ?? '').toLowerCase();
+          const strValB = String(valB ?? '').toLowerCase();
 
           if (strValA < strValB) return sortDirection === 'asc' ? -1 : 1;
-          if (strValA > strValB) return sortDirection === 'asc' ? 1 : -1;
-          return 0;
+          if (strValA > strValB) return sortDirection === 'asc' ? 1 : 1; // Error: should be 1 for asc, -1 for desc if valA > valB
+          // Corrected:
+          // if (strValA < strValB) return sortDirection === 'asc' ? -1 : 1;
+          // if (strValA > strValB) return sortDirection === 'asc' ? 1 : -1;
+
+
+          let comparisonResult = 0;
+          if (strValA < strValB) {
+            comparisonResult = -1;
+          } else if (strValA > strValB) {
+            comparisonResult = 1;
+          }
+
+          return sortDirection === 'asc' ? comparisonResult : -comparisonResult;
         });
+        // console.log('Data after sort:', JSON.parse(JSON.stringify(processedData.map(d => d[sortColumn]))));
+        return [...processedData]; // Return a new array reference after sorting
       }
 
-      return sortedData;
+      return processedData; // Return the filtered (but not sorted) data, which is already a new array from .filter()
     });
-  }, [searchTerm, filters, sortColumn, sortDirection, mockOrdenesTrabajo]); // Added mockOrdenesTrabajo as it's used directly now
+  }, [searchTerm, filters, sortColumn, sortDirection]);
 
   const handleOtClick = (ot: OrdenTrabajo) => {
     navigate(`/ot/${ot.id}`); // Navigate to OT detail page
@@ -163,16 +171,16 @@ const HomePage: React.FC = () => {
 
   const renderFilterDropdown = (field: OrdenTrabajoKeys, options: string[], label: string) => (
     <div className="mr-2 mb-2">
-      <label htmlFor={`filter-${field}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}:</label>
+      <label htmlFor={`filter-${field}`} className="block text-sm font-medium text-gray-700">{label}:</label>
       <select
         id={`filter-${field}`}
         name={`filter-${field}`}
-        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
         value={filters[field] || ''}
         onChange={(e) => handleFilterChange(field, e.target.value)}
       >
-        <option value="" className="dark:bg-gray-700">Todos</option>
-        {options.map(opt => <option key={opt} value={opt} className="dark:bg-gray-700">{opt}</option>)}
+        <option value="">Todos</option>
+        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
       </select>
     </div>
   );
@@ -219,7 +227,6 @@ const HomePage: React.FC = () => {
         <div className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-6 shadow">
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Filtros Avanzados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-            {/* Assuming renderFilterDropdown will also get dark mode styles for select elements if needed, or we update it */}
             {renderFilterDropdown('id', [...new Set(mockOrdenesTrabajo.map(ot => ot.id))], 'OT-Number')}
             {renderFilterDropdown('fechaCreacion', [...new Set(mockOrdenesTrabajo.map(ot => ot.fechaCreacion))], 'Fecha Creación')}
             {renderFilterDropdown('fechaRecepcion', [...new Set(mockOrdenesTrabajo.map(ot => ot.fechaRecepcion).filter(Boolean) as string[])], 'Fecha Recepción')}
@@ -230,7 +237,7 @@ const HomePage: React.FC = () => {
             {renderFilterDropdown('modelo', modeloEquipoOptions, 'Modelo')}
             {renderFilterDropdown('recibidoPor', recibidoPorOptions, 'Recibido Por')}
             {renderFilterDropdown('estado', otStatusOptions, 'Estado')}
-            {renderFilterDropdown('priority', priorityOptions, 'Prioridad')}
+            {/* Priority filter will be added here in the next step */}
           </div>
           <hr className="my-4 dark:border-gray-600"/>
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Configurar Columnas Visibles</h2>
@@ -280,22 +287,18 @@ const HomePage: React.FC = () => {
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ot[colKey] as string)}`}>
                         {ot[colKey]}
                       </span>
-                    ) : colKey === 'priority' ? (
-                      // Priority colors might need adjustment for dark mode if they don't contrast well.
-                      // For now, using the existing getPriorityColor which returns specific bg and text colors.
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(ot[colKey] as string)}`}>
-                        {ot[colKey] || 'N/A'}
-                      </span>
                     ) : (
                       String(ot[colKey as keyof OrdenTrabajo] || 'N/A')
                     )}
                   </td>
                 ))}
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  {/* Action buttons will be restored/modified in a later step based on Ver/Eliminar */}
                   <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        setSummaryOt(ot);
+                        // Placeholder for Ver action
+                        console.log("Ver OT:", ot.id);
                     }}
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2 text-xs"
                   >
@@ -326,10 +329,7 @@ const HomePage: React.FC = () => {
       <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
         <p>© {new Date().getFullYear()} Sistema de Gestión de OTs. Todos los derechos reservados.</p>
       </footer>
-
-      {summaryOt && (
-        <OTSummaryCard ot={summaryOt} onClose={() => setSummaryOt(null)} />
-      )}
+      {/* OTSummaryCard will be re-added here later */}
     </div>
   );
 };
