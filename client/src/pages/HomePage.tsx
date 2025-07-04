@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import {
+  OrdenTrabajo, // Ensure OrdenTrabajo type is imported for state
   otStatusOptions,
   priorityOptions, // Import priority options
   motivoIngresoOptions,
@@ -10,9 +11,11 @@ import {
   modeloEquipoOptions,
   recibidoPorOptions,
   // mockOrdenesTrabajo, // Moved to examples.ts
-  OrdenTrabajo
+  // mockOrdenesTrabajo, // Moved to examples.ts
+  // OrdenTrabajo // Already imported above
 } from '../data/dropdownData'; // Adjust the path as necessary
 import { mockOrdenesTrabajo } from '../data/examples'; // Corrected import
+import OTSummaryCard from '../components/OTSummaryCard'; // Import the summary card component
 
 // Define a type for the keys of OrdenTrabajo to be used for filtering and column selection
 type OrdenTrabajoKeys = keyof OrdenTrabajo;
@@ -21,6 +24,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate(); // Initialize useNavigate
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
+  const [summaryOt, setSummaryOt] = useState<OrdenTrabajo | null>(null); // State for summary card
 
   // State for advanced filters
   const [filters, setFilters] = useState<Partial<Record<OrdenTrabajoKeys, string>>>({});
@@ -222,7 +226,7 @@ const HomePage: React.FC = () => {
                   <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/ot/${ot.id}`);
+                        setSummaryOt(ot);
                     }}
                     className="text-blue-600 hover:text-blue-900 mr-2 text-xs"
                   >
@@ -253,6 +257,10 @@ const HomePage: React.FC = () => {
       <footer className="mt-8 text-center text-sm text-gray-500">
         <p>© {new Date().getFullYear()} Sistema de Gestión de OTs. Todos los derechos reservados.</p>
       </footer>
+
+      {summaryOt && (
+        <OTSummaryCard ot={summaryOt} onClose={() => setSummaryOt(null)} />
+      )}
     </div>
   );
 };

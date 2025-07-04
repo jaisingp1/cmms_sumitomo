@@ -16,7 +16,7 @@ import {
   PresupuestoItem   // Added import
 } from '../data/dropdownData';
 import { mockOrdenesTrabajo } from '../data/examples'; // Importar desde examples.ts
-import ProcessTracker from '../components/ProcessTracker'; // Import the new tracker component
+import ChangeLogDisplay from '../components/ChangeLogDisplay'; // Import the new component
 
 // Define common props for Tab components
 interface TabComponentProps {
@@ -296,9 +296,6 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         onNumeroSerieBlur={handleNumeroSerieBlur}
         isNewOt={isNew} // isNew (de props) se pasa como isNewOt al Header
       />
-
-      {/* Process Tracker */}
-      <ProcessTracker currentStatus={workOrder.estado} />
       
       {/* Tabs for different sections */}
       <Tabs 
@@ -308,7 +305,11 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         setWorkOrder={setWorkOrder} // This will be refactored to use addChangeLogEntry for specific actions
         addChangeLogEntry={addChangeLogEntry} // Pass the logger
       />
-      {/* ChangeLogDisplay is now rendered within the Tabs component when 'historial' tab is active */}
+
+      {/* Display immutable change log */}
+      <ChangeLogDisplay
+        changeLog={workOrder.changeLog || []}
+      />
     </div>
   );
 };
@@ -626,12 +627,6 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
         >
           Cierre
         </button>
-        <button
-          onClick={() => setActiveTab('historial')}
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'historial' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Historial de Cambios
-        </button>
       </nav>
       
       <div className="mt-4">
@@ -644,7 +639,6 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
         {activeTab === 'pruebas' && <TestingTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'calidad' && <QualityTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'cierre' && <ClosureTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
-        {activeTab === 'historial' && <ChangeLogDisplay changeLog={workOrder.changeLog || []} />}
       </div>
     </div>
   );
@@ -654,8 +648,6 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
 const isTabEnabled = (tabName: string, currentStatus: string) => {
   // This would need to be customized based on your specific business rules
   // For now, just enabling all tabs for simplicity
-  // The 'historial' tab should always be enabled.
-  if (tabName === 'historial') return true;
   return true;
 };
 
@@ -2221,97 +2213,7 @@ const ClosureTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addC
   );
 };
 
-// ChangeLogDisplay Component (replaces old HistoryPanel)
-const ChangeLogDisplay = ({ changeLog }: { changeLog: ChangeHistoryEntry[] }) => {
-  if (!changeLog || changeLog.length === 0) {
-    return (
-      <div className="bg-white shadow rounded-lg p-6 mt-6">
-        <h3 className="text-lg font-medium mb-4">Historial de Cambios</h3>
-        <p className="text-sm text-gray-500">No hay historial de cambios disponible.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white shadow rounded-lg p-6 mt-6">
-      <h3 className="text-lg font-medium mb-4">Historial de Cambios</h3>
-      <div className="space-y-4">
-        {changeLog.slice().reverse().map((entry) => { // Display latest first
-          const changeTypeDisplayNames: Record<ChangeType, string> = {
-            OT_CREATION: "Creación de OT",
-            STATUS_UPDATE: "Actualización de Estado",
-            HEADER_FIELD_UPDATE: "Actualización Campo de Cabecera",
-            INSPECTION_UPDATE: "Actualización de Inspección",
-            CLEANING_UPDATE: "Actualización de Limpieza",
-            DISASSEMBLY_UPDATE: "Actualización de Desarme",
-            PARTS_UPDATE: "Actualización de Piezas",
-            BUDGET_ITEM_ADD: "Ítem de Presupuesto Agregado",
-            BUDGET_ITEM_REMOVE: "Ítem de Presupuesto Eliminado",
-            BUDGET_ITEM_UPDATE: "Ítem de Presupuesto Actualizado",
-            BUDGET_APPROVAL: "Aprobación de Presupuesto",
-            REPAIR_NOTES_UPDATE: "Actualización Notas de Reparación",
-            ADDITIONAL_PART_ADD: "Pieza Adicional Agregada",
-            ADDITIONAL_PART_REMOVE: "Pieza Adicional Eliminada",
-            ADDITIONAL_PART_UPDATE: "Pieza Adicional Actualizada",
-            TESTING_UPDATE: "Actualización de Pruebas",
-            QUALITY_APPROVAL: "Aprobación de Calidad",
-            CLOSURE_UPDATE: "Actualización de Cierre",
-          };
-          const displayChangeType = changeTypeDisplayNames[entry.changeType] || entry.changeType;
-
-          return (
-            <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold text-indigo-600">{displayChangeType}</span>
-                <span className="text-xs text-gray-500">
-                  {new Date(entry.timestamp).toLocaleString()}
-                </span>
-              </div>
-              <p className="text-sm text-gray-700 mb-1">{entry.description}</p>
-              <p className="text-sm text-gray-500">Usuario: {entry.user}</p>
-            {entry.details && Object.keys(entry.details).length > 0 && (
-              <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-3 rounded shadow-inner">
-                <h5 className="text-xs font-semibold text-gray-700 mb-1">Detalles Adicionales:</h5>
-                <ul className="list-disc list-inside pl-1 space-y-0.5">
-                  {Object.entries(entry.details).map(([key, value]) => {
-                    let displayValue = String(value);
-                    if (typeof value === 'boolean') {
-                      displayValue = value ? "Sí" : "No";
-                    } else if (value === null || value === undefined || String(value).trim() === "") {
-                      displayValue = "N/A";
-                    }
-
-                    // Simple key-to-label mapping (can be expanded)
-                    const keyMappings: Record<string, string> = {
-                      field: "Campo",
-                      oldValue: "Valor Anterior",
-                      newValue: "Valor Nuevo",
-                      action: "Acción",
-                      fileName: "Nombre de Archivo",
-                      tab: "Pestaña",
-                      numeroSerie: "Número de Serie",
-                      partIndex: "Índice de Pieza",
-                      removedPart: "Pieza Eliminada",
-                      itemIndex: "Índice de Ítem",
-                      notes: "Notas",
-                      // Add more mappings as needed
-                    };
-                    const displayKey = keyMappings[key] || key.charAt(0).toUpperCase() + key.slice(1); // Capitalize if no mapping
-
-                    return (
-                      <li key={key} className="text-gray-500">
-                        <span className="font-medium text-gray-600">{displayKey}:</span> {displayValue}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </div>
-        )})}
-      </div>
-    </div>
-  );
-};
+// ChangeLogDisplay component has been moved to client/src/components/ChangeLogDisplay.tsx
+// It is now imported at the top of this file.
 
 export default WorkOrderForm;
