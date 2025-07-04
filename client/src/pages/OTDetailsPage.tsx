@@ -6,6 +6,7 @@ import {
   vendedorOptions, 
   modeloEquipoOptions, 
   recibidoPorOptions,
+  priorityOptions, // Import priority options
   // mockOrdenesTrabajo, // Movido a examples.ts
   ChangeHistoryEntry,
   ChangeType,
@@ -15,6 +16,7 @@ import {
   PresupuestoItem   // Added import
 } from '../data/dropdownData';
 import { mockOrdenesTrabajo } from '../data/examples'; // Importar desde examples.ts
+import ProcessTracker from '../components/ProcessTracker'; // Import the new tracker component
 
 // Define common props for Tab components
 interface TabComponentProps {
@@ -54,6 +56,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         fechaCreacion: new Date().toISOString().split('T')[0],
         creadoPor: "UsuarioActual", // Placeholder
         estado: "Creada", // Default estado for new OT
+        priority: "Media", // Default priority for new OT
         motivoIngreso: '',
         cliente: '',
         vendedor: '',
@@ -184,7 +187,8 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         modelo: "Modelo del Equipo",
         recibidoPor: "Recibido Por",
         fechaVentaCliente: "Fecha Venta Cliente",
-        estado: "Estado"
+        estado: "Estado",
+        priority: "Prioridad" // Add priority to mappings
       };
       const displayFieldName = fieldNameMappings[field] || field;
 
@@ -292,6 +296,9 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         onNumeroSerieBlur={handleNumeroSerieBlur}
         isNewOt={isNew} // isNew (de props) se pasa como isNewOt al Header
       />
+
+      {/* Process Tracker */}
+      <ProcessTracker currentStatus={workOrder.estado} />
       
       {/* Tabs for different sections */}
       <Tabs 
@@ -301,11 +308,7 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
         setWorkOrder={setWorkOrder} // This will be refactored to use addChangeLogEntry for specific actions
         addChangeLogEntry={addChangeLogEntry} // Pass the logger
       />
-      
-      {/* Display immutable change log */}
-      <ChangeLogDisplay
-        changeLog={workOrder.changeLog || []}
-      />
+      {/* ChangeLogDisplay is now rendered within the Tabs component when 'historial' tab is active */}
     </div>
   );
 };
@@ -538,6 +541,19 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
             ))}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Prioridad</label>
+          <select
+            value={workOrder.priority || 'Media'} // Default to Media if undefined
+            onChange={(e) => onHeaderChange('priority', e.target.value)}
+            disabled={!isEditing}
+            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+          >
+            {priorityOptions.map(priority => (
+              <option key={priority} value={priority}>{priority}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );
@@ -610,6 +626,12 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
         >
           Cierre
         </button>
+        <button
+          onClick={() => setActiveTab('historial')}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'historial' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          Historial de Cambios
+        </button>
       </nav>
       
       <div className="mt-4">
@@ -622,6 +644,7 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
         {activeTab === 'pruebas' && <TestingTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'calidad' && <QualityTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'cierre' && <ClosureTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
+        {activeTab === 'historial' && <ChangeLogDisplay changeLog={workOrder.changeLog || []} />}
       </div>
     </div>
   );
@@ -631,6 +654,8 @@ const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEn
 const isTabEnabled = (tabName: string, currentStatus: string) => {
   // This would need to be customized based on your specific business rules
   // For now, just enabling all tabs for simplicity
+  // The 'historial' tab should always be enabled.
+  if (tabName === 'historial') return true;
   return true;
 };
 

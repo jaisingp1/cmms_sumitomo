@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import {
   otStatusOptions,
+  priorityOptions, // Import priority options
   motivoIngresoOptions,
   clienteOptions,
   vendedorOptions,
@@ -25,10 +26,10 @@ const HomePage: React.FC = () => {
   const [filters, setFilters] = useState<Partial<Record<OrdenTrabajoKeys, string>>>({});
 
   // State for visible columns
-  const defaultVisibleColumns: OrdenTrabajoKeys[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "estado"];
+  const defaultVisibleColumns: OrdenTrabajoKeys[] = ["id", "fechaCreacion", "cliente", "estado", "priority"]; // Added priority
   const allPossibleColumns: OrdenTrabajoKeys[] = [
     "id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente",
-    "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado"
+    "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority" // Added priority
   ];
   const [visibleColumns, setVisibleColumns] = useState<OrdenTrabajoKeys[]>(defaultVisibleColumns);
 
@@ -62,13 +63,21 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const getPriorityColor = (priority?: string): string => {
+    switch (priority) {
+      case "Alta": return "bg-red-500 text-white";
+      case "Media": return "bg-yellow-400 text-gray-800";
+      case "Baja": return "bg-green-400 text-white";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
   const filteredData = useMemo(() => {
     return mockOrdenesTrabajo.filter(ot => {
       // Search term filter (searches all fields, visible or hidden)
       const matchesSearchTerm = Object.entries(ot).some(([key, value]) => {
         // Asegurarse que solo se consideren strings, numbers o booleans para la búsqueda.
-        // Campos como 'historial', 'fotos', 'detallesRevision', etc. no deberían ser stringificados directamente para búsqueda general.
-        const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "diagnosticoInicial", "notasReparacion"];
+        const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority", "diagnosticoInicial", "notasReparacion"]; // Added priority
         if (searchableKeys.includes(key as keyof OrdenTrabajo)) {
           return String(value).toLowerCase().includes(searchTerm);
         }
@@ -156,6 +165,7 @@ const HomePage: React.FC = () => {
             {renderFilterDropdown('modelo', modeloEquipoOptions, 'Modelo')}
             {renderFilterDropdown('recibidoPor', recibidoPorOptions, 'Recibido Por')}
             {renderFilterDropdown('estado', otStatusOptions, 'Estado')}
+            {renderFilterDropdown('priority', priorityOptions, 'Prioridad')}
           </div>
           <hr className="my-4"/>
           <h2 className="text-xl font-semibold text-gray-700 mb-3">Configurar Columnas Visibles</h2>
@@ -199,6 +209,10 @@ const HomePage: React.FC = () => {
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ot[colKey] as string)}`}>
                         {ot[colKey]}
                       </span>
+                    ) : colKey === 'priority' ? (
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(ot[colKey] as string)}`}>
+                        {ot[colKey] || 'N/A'}
+                      </span>
                     ) : (
                       String(ot[colKey as keyof OrdenTrabajo] || 'N/A')
                     )}
@@ -208,22 +222,20 @@ const HomePage: React.FC = () => {
                   <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        console.log("Historial de OT:", ot.historial);
-                        alert(`Ver historial de ${ot.id}. Detalles en consola.`);
+                        navigate(`/ot/${ot.id}`);
                     }}
-                    className="text-indigo-600 hover:text-indigo-900 mr-2 text-xs"
+                    className="text-blue-600 hover:text-blue-900 mr-2 text-xs"
                   >
-                    Historial
+                    Ver
                   </button>
                   <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        console.log("Fotos de OT:", ot.fotos);
-                        alert(`Ver fotos de ${ot.id}. ${ot.fotos && ot.fotos.length > 0 ? ot.fotos.join(', ') : 'No hay fotos.'}`);
+                        alert("El usuario no tiene permitido eliminar.");
                     }}
-                    className="text-green-600 hover:text-green-900 text-xs"
+                    className="text-red-600 hover:text-red-900 text-xs"
                   >
-                    Fotos
+                    Eliminar
                   </button>
                 </td>
               </tr>

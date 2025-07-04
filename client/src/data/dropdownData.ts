@@ -17,6 +17,8 @@ export const otStatusOptions: string[] = [
   "Rechazada",
 ];
 
+export const priorityOptions: string[] = ["Alta", "Media", "Baja"];
+
 export const tipoProductoOptions: string[] = ["GB", "GM"];
 
 export const productoGBOptions: string[] = [
@@ -139,6 +141,7 @@ export interface OrdenTrabajo {
   reduccion?: string; // Simple, Doble, etc.
   cliente: string; // Nombre del cliente
   estado: string; // Estado actual de la OT
+  priority?: string; // Prioridad de la OT (Alta, Media, Baja)
   motivoIngreso?: string;
   vendedor?: string;
   modelo?: string;
