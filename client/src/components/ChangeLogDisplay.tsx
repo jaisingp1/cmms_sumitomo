@@ -10,17 +10,17 @@ interface ChangeLogDisplayProps {
 const ChangeLogDisplay: React.FC<ChangeLogDisplayProps> = ({ changeLog, maxHeight }) => {
   if (!changeLog || changeLog.length === 0) {
     return (
-      <div className="bg-white shadow rounded-lg p-4 mt-4"> {/* Adjusted padding/margin */}
-        <h3 className="text-md font-semibold text-gray-700 mb-2">Historial de Cambios</h3> {/* Adjusted font size */}
-        <p className="text-sm text-gray-500">No hay historial de cambios disponible.</p>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mt-4">
+        <h3 className="text-md font-semibold text-gray-700 dark:text-gray-100 mb-2">Historial de Cambios</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No hay historial de cambios disponible.</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white shadow rounded-lg p-4 mt-4 ${maxHeight ? 'overflow-y-auto' : ''}`} style={{ maxHeight: maxHeight }}>
-      <h3 className="text-md font-semibold text-gray-700 mb-3">Historial de Cambios</h3> {/* Adjusted font size */}
-      <div className="space-y-3"> {/* Adjusted spacing */}
+    <div className={`bg-white dark:bg-gray-800 shadow rounded-lg p-4 mt-4 ${maxHeight ? 'overflow-y-auto' : ''}`} style={{ maxHeight: maxHeight }}>
+      <h3 className="text-md font-semibold text-gray-700 dark:text-gray-100 mb-3">Historial de Cambios</h3>
+      <div className="space-y-3">
         {changeLog.slice().reverse().map((entry) => { // Display latest first
           const changeTypeDisplayNames: Record<ChangeType, string> = {
             OT_CREATION: "Creación de OT",
@@ -46,19 +46,19 @@ const ChangeLogDisplay: React.FC<ChangeLogDisplayProps> = ({ changeLog, maxHeigh
           const displayChangeType = changeTypeDisplayNames[entry.changeType] || entry.changeType;
 
           return (
-            <div key={entry.id} className="border border-gray-200 rounded-md p-3"> {/* Adjusted padding */}
-              <div className="flex justify-between items-center mb-1"> {/* Adjusted margin */}
-                <span className="text-xs font-semibold text-indigo-600">{displayChangeType}</span> {/* Adjusted font size */}
-                <span className="text-xxs text-gray-500"> {/* Adjusted font size */}
+            <div key={entry.id} className="border border-gray-200 dark:border-gray-700 rounded-md p-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{displayChangeType}</span>
+                <span className="text-xxs text-gray-500 dark:text-gray-400">
                   {new Date(entry.timestamp).toLocaleString()}
                 </span>
               </div>
-              <p className="text-xs text-gray-700 mb-0.5">{entry.description}</p> {/* Adjusted font size and margin */}
-              <p className="text-xxs text-gray-500">Usuario: {entry.user}</p> {/* Adjusted font size */}
+              <p className="text-xs text-gray-700 dark:text-gray-300 mb-0.5">{entry.description}</p>
+              <p className="text-xxs text-gray-500 dark:text-gray-400">Usuario: {entry.user}</p>
             {entry.details && Object.keys(entry.details).length > 0 && (
-              <div className="mt-1.5 text-xxs text-gray-600 bg-gray-50 p-2 rounded shadow-inner"> {/* Adjusted spacing and padding */}
-                <h5 className="text-xxs font-semibold text-gray-700 mb-0.5">Detalles Adicionales:</h5> {/* Adjusted font size */}
-                <ul className="list-disc list-inside pl-1 space-y-0"> {/* Adjusted spacing */}
+              <div className="mt-1.5 text-xxs text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded shadow-inner">
+                <h5 className="text-xxs font-semibold text-gray-700 dark:text-gray-200 mb-0.5">Detalles Adicionales:</h5>
+                <ul className="list-disc list-inside pl-1 space-y-0">
                   {Object.entries(entry.details).map(([key, value]) => {
                     let displayValue = String(value);
                     if (typeof value === 'boolean') {
@@ -84,8 +84,8 @@ const ChangeLogDisplay: React.FC<ChangeLogDisplayProps> = ({ changeLog, maxHeigh
                     const displayKey = keyMappings[key] || key.charAt(0).toUpperCase() + key.slice(1);
 
                     return (
-                      <li key={key} className="text-gray-500">
-                        <span className="font-medium text-gray-600">{displayKey}:</span> {displayValue}
+                      <li key={key} className="text-gray-500 dark:text-gray-400">
+                        <span className="font-medium text-gray-600 dark:text-gray-300">{displayKey}:</span> {displayValue}
                       </li>
                     );
                   })}

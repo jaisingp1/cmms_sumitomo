@@ -31,8 +31,8 @@ const ProcessTracker: React.FC<ProcessTrackerProps> = ({ currentStatus, workOrde
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-4 mb-4"> {/* Adjusted padding and margin for card */}
-      <h3 className="text-md font-semibold text-gray-700 mb-3">Estado del Proceso</h3> {/* Adjusted font size */}
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-4">
+      <h3 className="text-md font-semibold text-gray-700 dark:text-gray-100 mb-3">Estado del Proceso</h3>
       <div className="flex items-center overflow-x-auto py-2">
         {otStatusOptions.map((status, index) => {
           const isCompleted = index < currentIndex;
@@ -41,28 +41,29 @@ const ProcessTracker: React.FC<ProcessTrackerProps> = ({ currentStatus, workOrde
 
           return (
             <React.Fragment key={status}>
-              <div className="flex flex-col items-center min-w-[100px] md:min-w-[120px] px-1"> {/* Adjusted min-width and padding */}
+              <div className="flex flex-col items-center min-w-[100px] md:min-w-[120px] px-1">
                 <div
                   className={`
                     w-7 h-7 rounded-full flex items-center justify-center text-white mb-1 text-xs
-                    ${isActive ? 'bg-indigo-600 ring-2 md:ring-4 ring-indigo-300' : ''}
-                    ${isCompleted ? 'bg-green-500' : ''}
-                    ${!isActive && !isCompleted ? 'bg-gray-300' : ''}
+                    ${isActive ? 'bg-indigo-600 dark:bg-indigo-500 ring-2 md:ring-4 ring-indigo-300 dark:ring-indigo-700' : ''}
+                    ${isCompleted ? 'bg-green-500 dark:bg-green-600' : ''}
+                    ${!isActive && !isCompleted ? 'bg-gray-300 dark:bg-gray-600' : ''}
                   `}
                 >
                   {isCompleted ? (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"> {/* Adjusted icon size */}
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   ) : (
-                    <span className="text-xxs font-semibold">{index + 1}</span> /* Smaller text for number */
+                    // Ensure text inside non-active, non-completed dots is visible in dark mode
+                    <span className={`text-xxs font-semibold ${(!isActive && !isCompleted) ? 'text-gray-700 dark:text-gray-200' : 'text-white'}`}>{index + 1}</span>
                   )}
                 </div>
-                <div className={`text-xxs md:text-xs text-center ${isActive ? 'font-bold text-indigo-700' : 'text-gray-600'}`}> {/* Adjusted text size */}
+                <div className={`text-xxs md:text-xs text-center ${isActive ? 'font-bold text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'}`}>
                   {status}
                 </div>
                 {isActive && responsible && (
-                  <div className="text-xxs text-center text-indigo-500 mt-0.5">
+                  <div className="text-xxs text-center text-indigo-500 dark:text-indigo-400 mt-0.5">
                     ({responsible})
                   </div>
                 )}
