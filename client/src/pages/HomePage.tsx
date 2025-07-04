@@ -17,6 +17,8 @@ import {
 import { mockOrdenesTrabajo } from '../data/examples'; // Corrected import
 import OTSummaryCard from '../components/OTSummaryCard'; // Import the summary card component
 
+import ThemeToggler from '../components/ThemeToggler'; // Import ThemeToggler
+
 // Define a type for the keys of OrdenTrabajo to be used for filtering and column selection
 type OrdenTrabajoKeys = keyof OrdenTrabajo;
 
@@ -25,6 +27,8 @@ const HomePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
   const [summaryOt, setSummaryOt] = useState<OrdenTrabajo | null>(null); // State for summary card
+  const [sortColumn, setSortColumn] = useState<OrdenTrabajoKeys | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // State for advanced filters
   const [filters, setFilters] = useState<Partial<Record<OrdenTrabajoKeys, string>>>({});
@@ -95,41 +99,98 @@ const HomePage: React.FC = () => {
         return String(otValue).toLowerCase().includes(filterValue.toLowerCase());
       });
 
-      return matchesSearchTerm && matchesFilters;
+      let sortedData = [...(matchesSearchTerm && matchesFilters ? mockOrdenesTrabajo.filter(ot => {
+        const searchMatch = Object.entries(ot).some(([key, value]) => {
+          const searchableKeys: (keyof OrdenTrabajo)[] = ["id", "fechaCreacion", "fechaRecepcion", "motivoIngreso", "cliente", "vendedor", "numeroSerie", "modelo", "recibidoPor", "fechaVentaCliente", "estado", "priority", "diagnosticoInicial", "notasReparacion"];
+          if (searchableKeys.includes(key as keyof OrdenTrabajo)) {
+            return String(value).toLowerCase().includes(searchTerm);
+          }
+          return false;
+        });
+        const filterMatch = Object.entries(filters).every(([key, filterValue]) => {
+          if (!filterValue) return true;
+          const otValue = ot[key as OrdenTrabajoKeys];
+          return String(otValue).toLowerCase().includes(filterValue.toLowerCase());
+        });
+        return searchMatch && filterMatch;
+      }) : [])];
+
+
+      if (sortColumn) {
+        sortedData.sort((a, b) => {
+          const valA = a[sortColumn];
+          const valB = b[sortColumn];
+
+          // Basic null/undefined handling: place them at the end for asc, start for desc
+          if (valA == null && valB == null) return 0;
+          if (valA == null) return sortDirection === 'asc' ? 1 : -1;
+          if (valB == null) return sortDirection === 'asc' ? -1 : 1;
+
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            return sortDirection === 'asc' ? valA - valB : valB - valA;
+          }
+          // Default to string comparison
+          const strValA = String(valA).toLowerCase();
+          const strValB = String(valB).toLowerCase();
+
+          if (strValA < strValB) return sortDirection === 'asc' ? -1 : 1;
+          if (strValA > strValB) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      return sortedData;
     });
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, sortColumn, sortDirection, mockOrdenesTrabajo]); // Added mockOrdenesTrabajo as it's used directly now
 
   const handleOtClick = (ot: OrdenTrabajo) => {
     navigate(`/ot/${ot.id}`); // Navigate to OT detail page
   };
 
+  const handleSort = (column: OrdenTrabajoKeys) => {
+    if (sortColumn === column) {
+      setSortDirection(prevDir => prevDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const renderSortArrow = (column: OrdenTrabajoKeys) => {
+    if (sortColumn !== column) return null;
+    return sortDirection === 'asc' ? ' ▲' : ' ▼';
+  };
+
   const renderFilterDropdown = (field: OrdenTrabajoKeys, options: string[], label: string) => (
     <div className="mr-2 mb-2">
-      <label htmlFor={`filter-${field}`} className="block text-sm font-medium text-gray-700">{label}:</label>
+      <label htmlFor={`filter-${field}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}:</label>
       <select
         id={`filter-${field}`}
         name={`filter-${field}`}
-        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         value={filters[field] || ''}
         onChange={(e) => handleFilterChange(field, e.target.value)}
       >
-        <option value="">Todos</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        <option value="" className="dark:bg-gray-700">Todos</option>
+        {options.map(opt => <option key={opt} value={opt} className="dark:bg-gray-700">{opt}</option>)}
       </select>
     </div>
   );
 
 
   return (
-    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
       <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard de Órdenes de Trabajo (OTs)</h1>
-        <button
-          onClick={() => navigate('/ot/new')} // Asumiendo que '/ot/new' será la ruta para crear una nueva OT
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150"
-        >
-          Crear Nueva OT
-        </button>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Dashboard de Órdenes de Trabajo (OTs)</h1>
+        <div className="flex items-center space-x-4">
+          <ThemeToggler />
+          <button
+            onClick={() => navigate('/ot/new')} // Asumiendo que '/ot/new' será la ruta para crear una nueva OT
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150"
+          >
+            Crear Nueva OT
+          </button>
+        </div>
       </header>
 
       {/* Barra de búsqueda */}
@@ -137,7 +198,7 @@ const HomePage: React.FC = () => {
         <input
           type="text"
           placeholder="Buscar en todas las OTs (por campos principales)..."
-          className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           value={searchTerm}
           onChange={handleSearchChange}
         />
@@ -155,11 +216,11 @@ const HomePage: React.FC = () => {
 
       {/* Filtros Avanzados y Configuración de Columnas (condicional) */}
       {showAdvancedFilters && (
-        <div className="p-4 bg-white border border-gray-200 rounded-lg mb-6 shadow">
-          <h2 className="text-xl font-semibold text-gray-700 mb-3">Filtros Avanzados</h2>
+        <div className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-6 shadow">
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Filtros Avanzados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+            {/* Assuming renderFilterDropdown will also get dark mode styles for select elements if needed, or we update it */}
             {renderFilterDropdown('id', [...new Set(mockOrdenesTrabajo.map(ot => ot.id))], 'OT-Number')}
-            {/* Fechas podrían ser DatePickers en una app real */}
             {renderFilterDropdown('fechaCreacion', [...new Set(mockOrdenesTrabajo.map(ot => ot.fechaCreacion))], 'Fecha Creación')}
             {renderFilterDropdown('fechaRecepcion', [...new Set(mockOrdenesTrabajo.map(ot => ot.fechaRecepcion).filter(Boolean) as string[])], 'Fecha Recepción')}
             {renderFilterDropdown('motivoIngreso', motivoIngresoOptions, 'Motivo Ingreso')}
@@ -171,18 +232,18 @@ const HomePage: React.FC = () => {
             {renderFilterDropdown('estado', otStatusOptions, 'Estado')}
             {renderFilterDropdown('priority', priorityOptions, 'Prioridad')}
           </div>
-          <hr className="my-4"/>
-          <h2 className="text-xl font-semibold text-gray-700 mb-3">Configurar Columnas Visibles</h2>
+          <hr className="my-4 dark:border-gray-600"/>
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Configurar Columnas Visibles</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
             {allPossibleColumns.map(colKey => (
-              <label key={colKey} className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer">
+              <label key={colKey} className="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer">
                 <input
                   type="checkbox"
-                  className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                  className="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 dark:border-gray-600 focus:ring-indigo-500 bg-gray-100 dark:bg-gray-700"
                   checked={visibleColumns.includes(colKey)}
                   onChange={() => handleColumnToggle(colKey)}
                 />
-                <span className="text-sm text-gray-700 capitalize">{colKey.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{colKey.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
               </label>
             ))}
           </div>
@@ -190,30 +251,38 @@ const HomePage: React.FC = () => {
       )}
 
       {/* Tabla de Órdenes de Trabajo */}
-      <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
               {visibleColumns.map(colKey => (
-                <th key={colKey} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider capitalize">
+                <th
+                  key={colKey}
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider capitalize cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => handleSort(colKey)}
+                >
                   {colKey.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                  {renderSortArrow(colKey)}
                 </th>
               ))}
-               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Acciones
                 </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {filteredData.length > 0 ? filteredData.map((ot) => (
-              <tr key={ot.id} onClick={() => handleOtClick(ot)} className="hover:bg-gray-50 cursor-pointer transition duration-150">
+              <tr key={ot.id} onClick={() => handleOtClick(ot)} className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition duration-150">
                 {visibleColumns.map(colKey => (
-                  <td key={`${ot.id}-${colKey}`} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td key={`${ot.id}-${colKey}`} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {colKey === 'estado' ? (
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ot[colKey] as string)}`}>
                         {ot[colKey]}
                       </span>
                     ) : colKey === 'priority' ? (
+                      // Priority colors might need adjustment for dark mode if they don't contrast well.
+                      // For now, using the existing getPriorityColor which returns specific bg and text colors.
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(ot[colKey] as string)}`}>
                         {ot[colKey] || 'N/A'}
                       </span>
@@ -228,7 +297,7 @@ const HomePage: React.FC = () => {
                         e.stopPropagation();
                         setSummaryOt(ot);
                     }}
-                    className="text-blue-600 hover:text-blue-900 mr-2 text-xs"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-2 text-xs"
                   >
                     Ver
                   </button>
@@ -237,7 +306,7 @@ const HomePage: React.FC = () => {
                         e.stopPropagation();
                         alert("El usuario no tiene permitido eliminar.");
                     }}
-                    className="text-red-600 hover:text-red-900 text-xs"
+                    className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 text-xs"
                   >
                     Eliminar
                   </button>
@@ -245,7 +314,7 @@ const HomePage: React.FC = () => {
               </tr>
             )) : (
               <tr>
-                <td colSpan={visibleColumns.length + 1} className="px-6 py-12 text-center text-sm text-gray-500">
+                <td colSpan={visibleColumns.length + 1} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
                   No se encontraron órdenes de trabajo que coincidan con los criterios.
                 </td>
               </tr>
@@ -254,7 +323,7 @@ const HomePage: React.FC = () => {
         </table>
       </div>
 
-      <footer className="mt-8 text-center text-sm text-gray-500">
+      <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
         <p>© {new Date().getFullYear()} Sistema de Gestión de OTs. Todos los derechos reservados.</p>
       </footer>
 

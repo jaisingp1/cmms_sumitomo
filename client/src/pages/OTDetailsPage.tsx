@@ -280,11 +280,13 @@ const WorkOrderForm: React.FC<WorkOrderFormProps> = ({ ordenTrabajo: initialOt, 
   };
   
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-end mb-4">
+    <div className="container mx-auto p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+      <div className="flex justify-between items-center mb-4">
+        {/* Placeholder for a potential ThemeToggler here if desired */}
+        <div></div>
         <button
           onClick={() => navigate('/')}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:hover:bg-gray-600"
         >
           Volver a Home
         </button>
@@ -323,28 +325,28 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Información de la Orden de Trabajo</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Información de la Orden de Trabajo</h2>
         <button
           onClick={toggleEditing}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
         >
           {isEditing ? 'Finalizar Edición OT' : 'Editar Información OT'}
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Número de OT (ID)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de OT (ID)</label>
           <input
             type="text"
             value={workOrder.id || ''}
             readOnly
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100 dark:bg-gray-700 dark:text-gray-300"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Número de Serie (Equipo)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de Serie (Equipo)</label>
           <input
             type="text"
             value={workOrder.numeroSerie || ''}
@@ -357,201 +359,201 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
               }
             }}
             readOnly={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Tipo de Producto</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de Producto</label>
           <select 
             value={workOrder.tipoProducto || ''}
             onChange={(e) => onHeaderChange('tipoProducto', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
-            <option value="GB">GB</option>
-            <option value="GM">GM</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
+            <option value="GB" className="dark:bg-gray-700">GB</option>
+            <option value="GM" className="dark:bg-gray-700">GM</option>
           </select>
         </div>
         
         {workOrder.tipoProducto === 'GB' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo GB</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo GB</label>
             <select 
               value={workOrder.tipoGB || ''} // Use workOrder.tipoGB
               onChange={(e) => onHeaderChange('tipoGB', e.target.value)}
               disabled={!isEditing}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+              className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
             >
-              <option value="">Seleccione...</option>
-              <option value="Paramax">Paramax</option>
-              <option value="Hansen">Hansen</option>
-              <option value="Flender">Flender</option>
-              <option value="Sew">Sew</option>
-              <option value="Falk">Falk</option>
-              <option value="Otro">Otro</option>
+              <option value="" className="dark:bg-gray-700">Seleccione...</option>
+              <option value="Paramax" className="dark:bg-gray-700">Paramax</option>
+              <option value="Hansen" className="dark:bg-gray-700">Hansen</option>
+              <option value="Flender" className="dark:bg-gray-700">Flender</option>
+              <option value="Sew" className="dark:bg-gray-700">Sew</option>
+              <option value="Falk" className="dark:bg-gray-700">Falk</option>
+              <option value="Otro" className="dark:bg-gray-700">Otro</option>
             </select>
           </div>
         )}
         
         {workOrder.tipoProducto === 'GM' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo GM</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo GM</label>
             <select 
               value={workOrder.tipoGM || ''} // Use workOrder.tipoGM
               onChange={(e) => onHeaderChange('tipoGM', e.target.value)}
               disabled={!isEditing}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+              className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
             >
-              <option value="">Seleccione...</option>
-              <option value="Cyclo">Cyclo</option>
-              <option value="BBB">BBB</option>
-              <option value="HSM">HSM</option>
-              <option value="Hyponic">Hyponic</option>
-              <option value="Helical (HHB)">Helical (HHB)</option>
-              <option value="Otro">Otro</option>
+              <option value="" className="dark:bg-gray-700">Seleccione...</option>
+              <option value="Cyclo" className="dark:bg-gray-700">Cyclo</option>
+              <option value="BBB" className="dark:bg-gray-700">BBB</option>
+              <option value="HSM" className="dark:bg-gray-700">HSM</option>
+              <option value="Hyponic" className="dark:bg-gray-700">Hyponic</option>
+              <option value="Helical (HHB)" className="dark:bg-gray-700">Helical (HHB)</option>
+              <option value="Otro" className="dark:bg-gray-700">Otro</option>
             </select>
           </div>
         )}
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Orientación</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Orientación</label>
           <select 
             value={workOrder.orientacion || ''}
             onChange={(e) => onHeaderChange('orientacion', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
-            <option value="vertical">Vertical</option>
-            <option value="horizontal">Horizontal</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
+            <option value="vertical" className="dark:bg-gray-700">Vertical</option>
+            <option value="horizontal" className="dark:bg-gray-700">Horizontal</option>
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Reducción</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reducción</label>
           <select 
             value={workOrder.reduccion || ''}
             onChange={(e) => onHeaderChange('reduccion', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
-            <option value="simple">Reducción Simple</option>
-            <option value="doble">Doble Reducción</option>
-            <option value="triple">Triple Reducción</option>
-            <option value="cuadruple">Cuadruple Reducción</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
+            <option value="simple" className="dark:bg-gray-700">Reducción Simple</option>
+            <option value="doble" className="dark:bg-gray-700">Doble Reducción</option>
+            <option value="triple" className="dark:bg-gray-700">Triple Reducción</option>
+            <option value="cuadruple" className="dark:bg-gray-700">Cuadruple Reducción</option>
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Cliente</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cliente</label>
           <select 
             value={workOrder.cliente || ''}
             onChange={(e) => onHeaderChange('cliente', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
             {clienteOptions.map(cliente => (
-              <option key={cliente} value={cliente}>{cliente}</option>
+              <option key={cliente} value={cliente} className="dark:bg-gray-700">{cliente}</option>
             ))}
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Vendedor</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendedor</label>
           <select 
             value={workOrder.vendedor || ''}
             onChange={(e) => onHeaderChange('vendedor', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
             {vendedorOptions.map(vendedor => (
-              <option key={vendedor} value={vendedor}>{vendedor}</option>
+              <option key={vendedor} value={vendedor} className="dark:bg-gray-700">{vendedor}</option>
             ))}
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Modelo del Equipo</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modelo del Equipo</label>
           <select 
             value={workOrder.modelo || ''}
             onChange={(e) => onHeaderChange('modelo', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
             {modeloEquipoOptions.map(modelo => (
-              <option key={modelo} value={modelo}>{modelo}</option>
+              <option key={modelo} value={modelo} className="dark:bg-gray-700">{modelo}</option>
             ))}
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha de Venta al Cliente</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha de Venta al Cliente</label>
           <input
             type="date"
             value={workOrder.fechaVentaCliente || ''}
             onChange={(e) => onHeaderChange('fechaVentaCliente', e.target.value)}
             readOnly={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           />
         </div>
 
         {/* Campos movidos al final */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha Posible de Recepción</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha Posible de Recepción</label>
           <input
             type="date"
             value={workOrder.fechaRecepcion || ''}
             onChange={(e) => onHeaderChange('fechaRecepcion', e.target.value)}
             readOnly={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Recibido Por</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Recibido Por</label>
           <select 
             value={workOrder.recibidoPor || ''}
             onChange={(e) => onHeaderChange('recibidoPor', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
-            <option value="">Seleccione...</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
             {recibidoPorOptions.map(recibido => (
-              <option key={recibido} value={recibido}>{recibido}</option>
+              <option key={recibido} value={recibido} className="dark:bg-gray-700">{recibido}</option>
             ))}
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Estado</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
           <select 
             value={workOrder.estado}
             onChange={(e) => onHeaderChange('estado', e.target.value)}
             disabled={!isEditing} // El estado inicial es "Creada" y no editable al principio
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
             {/* No "Seleccione..." para estado, siempre debe tener un valor */}
             {otStatusOptions.map(status => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status} value={status} className="dark:bg-gray-700">{status}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Prioridad</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Prioridad</label>
           <select
             value={workOrder.priority || 'Media'} // Default to Media if undefined
             onChange={(e) => onHeaderChange('priority', e.target.value)}
             disabled={!isEditing}
-            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100' : ''}`}
+            className={`mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${!isEditing ? 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
           >
             {priorityOptions.map(priority => (
-              <option key={priority} value={priority}>{priority}</option>
+              <option key={priority} value={priority} className="dark:bg-gray-700">{priority}</option>
             ))}
           </select>
         </div>
@@ -563,73 +565,73 @@ const Header = ({ workOrder, onHeaderChange, onNumeroSerieBlur, isNewOt }) => {
 // Tabs component
 const Tabs = ({ activeTab, setActiveTab, workOrder, setWorkOrder, addChangeLogEntry }) => {
   return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
       <nav className="flex flex-wrap space-x-2 md:space-x-4 mb-6 overflow-x-auto">
         <button 
           onClick={() => setActiveTab('inspeccion')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'inspeccion' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'inspeccion' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
         >
           Inspección Visual
         </button>
         <button 
           onClick={() => setActiveTab('limpieza')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'limpieza' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'limpieza' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('limpieza', workOrder.estado)}
         >
           Limpieza de Equipo
         </button>
         <button 
           onClick={() => setActiveTab('desarme')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'desarme' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'desarme' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('desarme', workOrder.estado)}
         >
           Desarme
         </button>
         <button 
           onClick={() => setActiveTab('piezas')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'piezas' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'piezas' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('piezas', workOrder.estado)}
         >
           Piezas
         </button>
         <button 
           onClick={() => setActiveTab('presupuesto')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'presupuesto' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'presupuesto' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('presupuesto', workOrder.estado)}
         >
           Presupuesto
         </button>
         <button 
           onClick={() => setActiveTab('reparacion')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'reparacion' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'reparacion' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('reparacion', workOrder.estado)}
         >
           Reparación
         </button>
         <button 
           onClick={() => setActiveTab('pruebas')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'pruebas' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'pruebas' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('pruebas', workOrder.estado)}
         >
           Pruebas Dinámicas
         </button>
         <button 
           onClick={() => setActiveTab('calidad')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'calidad' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'calidad' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('calidad', workOrder.estado)}
         >
           Aprobación de Calidad
         </button>
         <button 
           onClick={() => setActiveTab('cierre')} 
-          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'cierre' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}
+          className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${activeTab === 'cierre' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-indigo-100' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           disabled={!isTabEnabled('cierre', workOrder.estado)}
         >
           Cierre
         </button>
       </nav>
       
-      <div className="mt-4">
+      <div className="mt-4"> {/* Content of tabs will inherit dark mode from parent or have specific styles */}
         {activeTab === 'inspeccion' && <InspectionTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'limpieza' && <CleaningTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
         {activeTab === 'desarme' && <DisassemblyTab workOrder={workOrder} setWorkOrder={setWorkOrder} addChangeLogEntry={addChangeLogEntry} />}
@@ -710,28 +712,28 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
   
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Inspección Visual</h3>
+      <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-100">Inspección Visual</h3>
       
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Comentarios</label>
         <textarea 
           rows={4}
           value={workOrder.inspeccionVisual?.comentarios || ''}
           onChange={(e) => handleCommentsChange(e.target.value)}
           onBlur={handleCommentsBlur}
-          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         ></textarea>
       </div>
       
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {(workOrder.inspeccionVisual?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
               src={fotoEntry.url}
               alt={fotoEntry.descripcion || `Inspección ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg border border-gray-200"
+              className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
             />
           ))}
         </div>
@@ -753,7 +755,7 @@ const InspectionTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, a
                 }
               }
             }}
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            className="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-800 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-700"
           />
         </div>
       </div>
@@ -852,66 +854,66 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Limpieza de Equipo</h3>
+      <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-100">Limpieza de Equipo</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Lavado</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Lavado</label>
           <select 
             value={workOrder.limpiezaEquipo?.tipoLavado || ''}
             onChange={(e) => handleFieldChange('tipoLavado', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
-            <option value="">Seleccione...</option>
-            <option value="general">Limpieza General</option>
-            <option value="profundo">Lavado Profundo</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
+            <option value="general" className="dark:bg-gray-700">Limpieza General</option>
+            <option value="profundo" className="dark:bg-gray-700">Lavado Profundo</option>
           </select>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Realización</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha de Realización</label>
           <input 
             type="date" 
             value={workOrder.limpiezaEquipo?.fechaRealizacion || ''}
             onChange={(e) => handleFieldChange('fechaRealizacion', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Realizado por</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Realizado por</label>
           <select 
             value={workOrder.limpiezaEquipo?.internoOProveedor || ''}
             onChange={(e) => handleFieldChange('internoOProveedor', e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
-            <option value="">Seleccione...</option>
-            <option value="Interno">Interno</option>
-            <option value="Proveedor">Proveedor</option>
+            <option value="" className="dark:bg-gray-700">Seleccione...</option>
+            <option value="Interno" className="dark:bg-gray-700">Interno</option>
+            <option value="Proveedor" className="dark:bg-gray-700">Proveedor</option>
           </select>
         </div>
       </div>
       
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios</label> {/* Changed from Notas */}
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Comentarios</label> {/* Changed from Notas */}
         <textarea 
           rows={4}
           value={workOrder.limpiezaEquipo?.comentarios || ''}
           onChange={(e) => handleCommentsChange(e.target.value)}
           onBlur={handleCommentsBlur}
-          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         ></textarea>
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {(workOrder.limpiezaEquipo?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
               src={fotoEntry.url}
               alt={fotoEntry.descripcion || `Limpieza ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg border border-gray-200"
+              className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
             />
           ))}
         </div>
@@ -933,7 +935,7 @@ const CleaningTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, add
                 }
               }
             }}
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            className="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-800 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-700"
           />
         </div>
       </div>
@@ -1006,28 +1008,28 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Desarme</h3>
+      <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-100">Desarme</h3>
       
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Acción a Realizar</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Acción a Realizar</label>
         <textarea 
           rows={4}
           value={workOrder.desarme?.accionARealizar || ''}
           onChange={(e) => handleAccionChange(e.target.value)}
           onBlur={handleAccionBlur}
-          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         ></textarea>
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fotos</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fotos</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {(workOrder.desarme?.fotos || []).map((fotoEntry, index) => (
             <img 
               key={index} 
               src={fotoEntry.url}
               alt={fotoEntry.descripcion || `Desarme ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg border border-gray-200"
+              className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
             />
           ))}
         </div>
@@ -1049,7 +1051,7 @@ const DisassemblyTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, 
                 }
               }
             }}
-            className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            className="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-800 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-700"
           />
         </div>
       </div>
@@ -1190,17 +1192,17 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
   
   return (
     <div>
-      <h3 className="text-lg font-medium mb-4">Diagnóstico de Piezas</h3> {/* Title updated */}
+      <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-100">Diagnóstico de Piezas</h3> {/* Title updated */}
       
       <div className="space-y-6">
         {(currentDiagnosticoPiezas.piezas || []).map((part, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg p-4">
+          <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="text-md font-medium">Pieza: {part.nombre || `Pieza ${index + 1}`}</h4>
+              <h4 className="text-md font-medium text-gray-800 dark:text-gray-100">Pieza: {part.nombre || `Pieza ${index + 1}`}</h4>
               <button 
                 type="button" 
                 onClick={() => removePart(index)}
-                className="text-red-600 hover:text-red-800"
+                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
               >
                 Eliminar
               </button>
@@ -1208,25 +1210,25 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Pieza</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Pieza</label>
                 <input
                   type="text"
                   value={part.nombre}
                   onChange={(e) => updatePart(index, 'nombre', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Foto</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Foto</label>
                 {part.foto ? (
                   <img 
                     src={part.foto.url}
                     alt={part.foto.descripcion || `Pieza ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200 mb-2"
+                    className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700 mb-2"
                   />
                 ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <p className="text-sm text-gray-500">Sin foto</p>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Sin foto</p>
                   </div>
                 )}
                 <input 
@@ -1237,50 +1239,50 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
                       uploadPartPhoto(index, e.target.files[0]);
                     }
                   }}
-                  className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mt-2"
+                  className="text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-800 dark:file:text-indigo-300 hover:file:bg-indigo-100 dark:hover:file:bg-indigo-700 mt-2"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mediciones Tomadas</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mediciones Tomadas</label>
                 <textarea 
                   rows={3}
                   value={part.mediciones || ''}
                   onChange={(e) => updatePart(index, 'mediciones', e.target.value)}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 ></textarea>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ensayos No Destructivos Realizados</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ensayos No Destructivos Realizados</label>
                 <textarea 
                   rows={3}
                   value={part.ensayosNoDestructivos || ''}
                   onChange={(e) => updatePart(index, 'ensayosNoDestructivos', e.target.value)}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 ></textarea>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Recomendación (Decisión)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recomendación (Decisión)</label>
                 <select 
                   value={part.decision || ''}
                   onChange={(e) => updatePart(index, 'decision', e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
-                  <option value="">Seleccione...</option>
-                  <option value="Reemplazar">Reemplazar</option>
-                  <option value="Reparar">Reparar</option>
-                  <option value="Reutilizar">Reutilizar</option>
+                  <option value="" className="dark:bg-gray-700">Seleccione...</option>
+                  <option value="Reemplazar" className="dark:bg-gray-700">Reemplazar</option>
+                  <option value="Reparar" className="dark:bg-gray-700">Reparar</option>
+                  <option value="Reutilizar" className="dark:bg-gray-700">Reutilizar</option>
                 </select>
               </div>
                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Comentarios Adicionales</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Comentarios Adicionales</label>
                 <textarea
                   rows={3}
                   value={part.comentarios || ''}
                   onChange={(e) => updatePart(index, 'comentarios', e.target.value)}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 ></textarea>
               </div>
             </div>
@@ -1291,7 +1293,7 @@ const PartsTab: React.FC<TabComponentProps> = ({ workOrder, setWorkOrder, addCha
       <button 
         type="button" 
         onClick={addPart}
-        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600"
       >
         Agregar Pieza
       </button>
